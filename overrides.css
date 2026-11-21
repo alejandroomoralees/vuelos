@@ -1,7 +1,7 @@
-#map.map-muted .leaflet-tile{filter:saturate(.25) brightness(.92) sepia(.08)}
 .map-legend.speed .legend-title{color:#477f88}
 .map-legend.heat .legend-title{color:#a95c41}
 .dock-table:empty{display:none}
+.dock-metrics{grid-template-columns:repeat(5,minmax(72px,1fr));max-width:none}
 .search-message{cursor:default;color:#858e8a}
 .mobile-close{display:none}
 .leaflet-control-zoom{border:1px solid #d9ddd2!important;border-radius:3px!important;box-shadow:0 2px 8px #142b3515!important}
@@ -19,3 +19,6 @@
 .maplibre-overlay .maplibregl-ctrl-group button{background-color:#fffdf6ed}
 @media(max-width:760px){.mobile-close{display:block}}
 @media(max-width:760px){.maplibre-overlay{bottom:180px}}
+@media(max-width:760px){.dock-metrics{grid-template-columns:repeat(5,minmax(54px,1fr))}}
+
+#map .leaflet-tile{transition:filter .2s ease}
