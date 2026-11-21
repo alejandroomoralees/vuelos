@@ -31,45 +31,12 @@ import {
   airportLabelLayer,
 } from "./ui/airportLabels";
 
-/**
- * Aeronautical overlay of open flightmaps: airspaces, airfields, navaids and
- * reporting points on transparent tiles. `latest` follows the current AIRAC
- * cycle, so the URL needs no upkeep, and the tiles need no API key.
- */
-const AVIATION_TILE_URL =
-  "https://nwy-tiles-api.prod.newaydata.com/tiles/{z}/{x}/{y}.png?path=latest/aero/latest";
-/**
- * The zoom levels the overlay is rendered for, as the `z` of its tile URLs;
- * above them it is upscaled. These are tile levels, not map zooms: a 256
- * pixel tile of level z is shown at map zoom z - 1.
- */
-const AVIATION_TILE_MIN_ZOOM = 7;
-const AVIATION_TILE_MAX_ZOOM = 12;
-/** Map zoom the overlay appears at: where its lowest tile level is shown */
-const AVIATION_MIN_ZOOM = AVIATION_TILE_MIN_ZOOM - 1;
-/**
- * Two levels of upscaling (16 times the area) still read as a chart. Beyond
- * that the overlay is a blur over the base map, so the layer ends instead of
- * stretching a tile up to the map's own limit. Map units; the last zoom the
- * overlay is still shown at.
- */
-const AVIATION_MAX_ZOOM = AVIATION_TILE_MAX_ZOOM - 1 + 2;
-/** A layer's `maxzoom` is exclusive, and the map zooms in fractions */
-const AVIATION_LAYER_MAX_ZOOM = AVIATION_MAX_ZOOM + 0.01;
+/** Legacy zoom band retained for old shared-map state compatibility. */
+export const AVIATION_BAND = [6, 13.01] as const;
 
-/**
- * The map zooms the aviation overlay draws at, from the first to the one
- * it no longer draws at: the band the heat and the base map's labels step
- * back across while it is on, in their paint (see dimmedWithin)
- */
-export const AVIATION_BAND = [
-  AVIATION_MIN_ZOOM,
-  AVIATION_LAYER_MAX_ZOOM,
-] as const;
-
-/** Whether the aviation overlay draws anything at map zoom `zoom` */
-export function aviationDrawsAt(zoom: number): boolean {
-  return zoom >= AVIATION_BAND[0] && zoom < AVIATION_BAND[1];
+/** The foreign chart overlay has been retired; no aviation tiles are drawn. */
+export function aviationDrawsAt(_zoom: number): boolean {
+  return false;
 }
 
 /** Line widths and opacities of the data layers as they are created */
@@ -229,27 +196,6 @@ function addDataLayersTo(map: MapLibreMap): void {
   const before = firstSymbolLayerId(map);
   const hidden = { visibility: "none" } as const;
   const round = { "line-cap": "round", "line-join": "round" } as const;
-
-  map.addSource(MAP_SOURCES.aviation, {
-    type: "raster",
-    tiles: [AVIATION_TILE_URL],
-    tileSize: 256,
-    minzoom: AVIATION_TILE_MIN_ZOOM,
-    maxzoom: AVIATION_TILE_MAX_ZOOM,
-    attribution:
-      '&copy; <a href="https://www.openflightmaps.org">open flightmaps</a>',
-  });
-  map.addLayer(
-    {
-      id: MAP_LAYERS.aviation,
-      type: "raster",
-      source: MAP_SOURCES.aviation,
-      minzoom: AVIATION_MIN_ZOOM,
-      maxzoom: AVIATION_LAYER_MAX_ZOOM,
-      layout: hidden,
-    },
-    before,
-  );
 
   // The look of the heatmap (radius, intensity, colours) is in
   // ui/heatmapPaint.ts, which the data manager sets as paint properties. The

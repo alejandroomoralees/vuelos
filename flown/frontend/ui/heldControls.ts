@@ -54,7 +54,6 @@ export const SELECTION_CONTROL_IDS = [
 export const REPLAY_HELD_CONTROL_IDS = [
   "heatmap-btn",
   "airports-btn",
-  "aviation-btn",
   "wrapped-btn",
   "year-select",
   "aircraft-select",

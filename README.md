@@ -4,6 +4,8 @@ Altura integra una adaptación en español de [Flown](https://github.com/saschag
 
 La base de Flown se distribuye bajo Apache 2.0. Se conserva el texto de la licencia y los avisos de copyright; las modificaciones locales se indican en los archivos modificados. Consulta [LICENSE](LICENSE) y [NOTICE](NOTICE).
 
+La carta VFR de España se abre en el visor oficial [Insignia VFR de ENAIRE](https://insigniavfr.enaire.es/). La antigua capa global de OpenFlightMaps se retiró porque no ofrece cobertura de España.
+
 ## Desarrollo local
 
 Necesitas Node.js 26 o posterior y Python 3.14 o posterior. Desde la raíz del repositorio:

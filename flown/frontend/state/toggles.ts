@@ -105,12 +105,8 @@ export const TOGGLES = [
     key: "aviationVisible",
     initial: false,
     url: { slot: 4 },
-    action: "toggleAviation",
-    button: "aviation-btn",
-    icon: "aviation",
-    label: "Aviation",
-    pressed: true,
-    sheet: { group: "layers", id: "aviation" },
+    // Slot 4 stays reserved so older shared links keep their schema. The
+    // former OpenFlightMaps overlay is retired; Spain's chart opens online.
   },
   // Not layers, but how the layers are drawn, and the Layers sheet is where
   // someone looks for them. The compass floats over the map instead (see

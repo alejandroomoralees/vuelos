@@ -5,7 +5,7 @@
     <meta charset="utf-8" />
     <meta
       http-equiv="Content-Security-Policy"
-      content="default-src 'self'; script-src 'self'; style-src 'self'; worker-src 'self'; img-src 'self' data: blob:; connect-src 'self' blob: https://basemaps.cartocdn.com https://*.basemaps.cartocdn.com https://nwy-tiles-api.prod.newaydata.com https://s3.amazonaws.com/elevation-tiles-prod/ https://tiles.maps.eox.at https://photon.komoot.io; font-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'; require-trusted-types-for 'script'; trusted-types flown default"
+      content="default-src 'self'; script-src 'self'; style-src 'self'; worker-src 'self'; img-src 'self' data: blob:; connect-src 'self' blob: https://basemaps.cartocdn.com https://*.basemaps.cartocdn.com https://s3.amazonaws.com/elevation-tiles-prod/ https://tiles.maps.eox.at https://photon.komoot.io; font-src 'self'; base-uri 'none'; form-action 'none'; object-src 'none'; require-trusted-types-for 'script'; trusted-types flown default"
     />
     <meta
       name="viewport"
@@ -413,17 +413,18 @@
           <span id="airspeed-reason" hidden>No timing data in the flights</span>
         </div>
         <div class="control-row">
-          <button
-            id="aviation-btn"
+          <a
+            id="spain-aviation-link"
             class="btn-surface control-btn"
-            data-action="toggleAviation"
             data-icon="aviation"
-            title="Aviation: airspaces and navaids of open flightmaps, once zoomed in"
-            aria-label="Aviation: airspaces and navaids of open flightmaps, once zoomed in"
-            aria-pressed="false"
+            href="https://insigniavfr.enaire.es/"
+            target="_blank"
+            rel="noopener noreferrer"
+            title="Spanish VFR chart (ENAIRE)"
+            aria-label="Spanish VFR chart (ENAIRE)"
           >
-            <span class="control-label">Aviation</span>
-          </button>
+            <span class="control-label">Spanish VFR chart</span>
+          </a>
         </div>
       </div>
 

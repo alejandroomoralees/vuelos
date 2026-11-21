@@ -102,6 +102,8 @@ export function sanitizeSavedState(candidate: unknown): SavedState {
   const pitch = toMapPitch(candidate["pitch"]);
   if (pitch !== null) result.pitch = pitch;
   for (const key of TOGGLE_KEYS) {
+    // Remove the retired foreign aviation overlay from saved browser state.
+    if (key === "aviationVisible") continue;
     const value = candidate[key];
     if (typeof value === "boolean") {
       result[key] = value;

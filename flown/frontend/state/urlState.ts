@@ -122,6 +122,9 @@ function parseToggles(urlParams: URLSearchParams, state: AppState): void {
   const vis = urlParams.get("v");
   const slots = vis?.length === VISIBILITY_SLOTS ? vis : null;
   for (const toggle of TOGGLES) {
+    // Slot 4 belonged to the retired foreign chart overlay. Ignore it in
+    // older links so it cannot dim the heatmap when no chart is present.
+    if (toggle.key === "aviationVisible") continue;
     const url: ToggleUrl = toggle.url;
     if ("slot" in url) {
       if (slots) state[toggle.key] = slots[url.slot] === "1";
