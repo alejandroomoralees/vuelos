@@ -7,6 +7,8 @@ const STYLE = {
 const SATELLITE_SOURCE = "altura-imagery";
 const ELEVATION_SOURCE = "altura-elevation";
 const GROUND_SOURCE = "altura-routes-ground";
+const REPLAY_SOURCE = "altura-replay-route";
+const STORAGE_DB = "altura-flight-history";
 const ALTITUDE_LIMIT_M = 12000;
 const MAX_FILE_BYTES = 80 * 1024 * 1024;
 const SPANISH_AIRPORT_CODES = {
@@ -19,7 +21,7 @@ const SPANISH_AIRPORT_CODES = {
   GCTS: "TFS", GCXO: "TFN", GCLA: "SPC", GCLP: "LPA", GCFV: "FUE",
   GCRR: "ACE", GCHI: "VDE", GCGM: "GMZ",
 };
-const state = { routes: [], mode: "altitude", light: false, satellite: true, threeD: true, selected: null };
+const state = { routes: [], mode: "altitude", light: false, satellite: true, threeD: true, selected: null, search: "", year: "all", replayIndex: 0, replaying: false };
 const map = new maplibregl.Map({
   container: "map",
   style: STYLE.dark,
@@ -43,6 +45,11 @@ let flightLayer = null;
 let airportMarkers = [];
 let terrainListener = null;
 let dragDepth = 0;
+let replayMarker = null;
+let replayFrame = null;
+let replayStarted = 0;
+let replayDuration = 12000;
+let storagePromise = null;
 
 function say(message) {
   toast.textContent = message;
@@ -161,6 +168,49 @@ async function readKml(file) {
   return parseKmlText(await file.text(), file.name);
 }
 
+function openStorage() {
+  if (!storagePromise) {
+    storagePromise = new Promise((resolve, reject) => {
+      const request = indexedDB.open(STORAGE_DB, 1);
+      request.onupgradeneeded = () => request.result.createObjectStore("routes", { keyPath: "id" });
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error || new Error("No se pudo abrir el almacenamiento local."));
+    });
+  }
+  return storagePromise;
+}
+
+async function saveRoutes() {
+  const database = await openStorage();
+  await new Promise((resolve, reject) => {
+    const transaction = database.transaction("routes", "readwrite");
+    const store = transaction.objectStore("routes");
+    store.clear();
+    for (const route of state.routes) store.put(route);
+    transaction.oncomplete = resolve;
+    transaction.onerror = () => reject(transaction.error || new Error("No se pudieron guardar las rutas."));
+    transaction.onabort = () => reject(transaction.error || new Error("Se canceló el guardado de las rutas."));
+  });
+}
+
+async function restoreRoutes() {
+  try {
+    const database = await openStorage();
+    const saved = await new Promise((resolve, reject) => {
+      const request = database.transaction("routes", "readonly").objectStore("routes").getAll();
+      request.onsuccess = () => resolve(request.result);
+      request.onerror = () => reject(request.error || new Error("No se pudieron recuperar las rutas."));
+    });
+    if (Array.isArray(saved) && saved.length) {
+      state.routes = saved;
+      refresh();
+      if (map.isStyleLoaded()) fitRoutes();
+    }
+  } catch (error) {
+    console.warn("No se pudo recuperar el historial local:", error);
+  }
+}
+
 async function acceptFiles(files) {
   const kmlFiles = Array.from(files).filter((file) => file.name.toLowerCase().endsWith(".kml"));
   if (!kmlFiles.length) return say("Selecciona uno o varios archivos .kml.");
@@ -173,6 +223,7 @@ async function acceptFiles(files) {
       say(`${file.name}: ${error instanceof Error ? error.message : "no se pudo leer"}`);
     }
   }
+  try { await saveRoutes(); } catch { say("Las rutas se muestran, pero el navegador no pudo guardarlas localmente."); }
   refresh();
   fitRoutes();
 }
@@ -376,9 +427,77 @@ function updateLegend() {
   }
 }
 
+function selectedRoute() {
+  return state.routes.find((route) => route.id === state.selected) || null;
+}
+
+function visibleRoutes() {
+  const query = state.search.trim().toLocaleLowerCase("es");
+  return state.routes.filter((route) => {
+    const yearMatches = state.year === "all" || route.date?.slice(0, 4) === state.year;
+    const searchMatches = !query || `${route.name} ${route.flight} ${route.origin || ""} ${route.destination || ""} ${route.date || ""}`.toLocaleLowerCase("es").includes(query);
+    return yearMatches && searchMatches;
+  });
+}
+
+function updateYearFilter() {
+  const select = $("year-filter");
+  const prior = state.year;
+  const years = [...new Set(state.routes.map((route) => route.date?.slice(0, 4)).filter((year) => /^20\d{2}$/.test(year || "")))].sort().reverse();
+  select.replaceChildren(new Option("Todos los años", "all"));
+  for (const year of years) select.add(new Option(year, year));
+  state.year = years.includes(prior) || prior === "all" ? prior : "all";
+  select.value = state.year;
+}
+
+function renderProfile(route) {
+  const svg = $("altitude-profile");
+  svg.replaceChildren();
+  const ns = "http://www.w3.org/2000/svg";
+  const range = route.points.reduce((result, point) => ({ min: Math.min(result.min, point.alt), max: Math.max(result.max, point.alt) }), { min: Infinity, max: -Infinity });
+  const { min, max } = range;
+  const span = Math.max(max - min, 100);
+  const stride = Math.max(1, Math.ceil(route.points.length / 500));
+  const profilePoints = route.points.map((point, index) => ({ point, index })).filter(({ index }) => index % stride === 0 || index === route.points.length - 1);
+  const coords = profilePoints.map(({ point, index }) => {
+    const x = 8 + index / Math.max(1, route.points.length - 1) * 344;
+    const y = 88 - (point.alt - min) / span * 72;
+    return `${index ? "L" : "M"}${x.toFixed(1)},${y.toFixed(1)}`;
+  }).join(" ");
+  const area = document.createElementNS(ns, "path");
+  area.setAttribute("d", `${coords} L352,90 L8,90 Z`);
+  area.setAttribute("class", "profile-area");
+  const line = document.createElementNS(ns, "path");
+  line.setAttribute("d", coords);
+  line.setAttribute("class", "profile-line");
+  const baseline = document.createElementNS(ns, "line");
+  baseline.setAttribute("x1", "8"); baseline.setAttribute("x2", "352");
+  baseline.setAttribute("y1", "90"); baseline.setAttribute("y2", "90"); baseline.setAttribute("class", "profile-baseline");
+  svg.append(area, line, baseline);
+}
+
+function renderDetails() {
+  const route = selectedRoute();
+  const section = $("route-details");
+  section.hidden = !route;
+  if (!route) { stopReplay(); return; }
+  $("detail-title").textContent = route.name;
+  $("detail-distance").textContent = `${route.distance.toFixed(0)} km`;
+  $("detail-altitude").textContent = `${route.maxAltitude.toLocaleString("es-ES", { maximumFractionDigits: 0 })} m`;
+  $("detail-speed").textContent = route.avgSpeed ? `${(route.avgSpeed * 3.6).toFixed(0)} km/h` : "Sin datos";
+  renderProfile(route);
+  const slider = $("replay-range");
+  slider.max = String(route.points.length - 1);
+  slider.value = String(Math.min(state.replayIndex, route.points.length - 1));
+  updateReplayVisuals();
+}
+
 function renderRoutes() {
   routeList.replaceChildren();
-  for (const route of state.routes) {
+  updateYearFilter();
+  const visible = visibleRoutes();
+  $("no-results").hidden = state.routes.length === 0 || visible.length > 0;
+  for (const route of visible) {
     const item = document.createElement("li");
     const card = document.createElement("article");
     card.className = `route-card${route.id === state.selected ? " selected" : ""}`;
@@ -406,6 +525,7 @@ function renderRoutes() {
       event.stopPropagation();
       state.routes = state.routes.filter((entry) => entry.id !== route.id);
       if (state.selected === route.id) state.selected = null;
+      void saveRoutes();
       refresh();
       fitRoutes();
     });
@@ -413,7 +533,8 @@ function renderRoutes() {
     card.append(head, meta);
     card.addEventListener("click", () => {
       state.selected = route.id;
-      renderRoutes();
+      state.replayIndex = 0;
+      refresh();
       const bounds = new maplibregl.LngLatBounds();
       route.points.forEach((point) => bounds.extend([point.lon, point.lat]));
       map.fitBounds(bounds, { padding: 90, maxZoom: 9, pitch: state.threeD ? 52 : 0 });
@@ -424,6 +545,72 @@ function renderRoutes() {
     item.append(card);
     routeList.append(item);
   }
+  renderDetails();
+}
+
+function formatDuration(seconds) {
+  const hrs = Math.floor(seconds / 3600);
+  const mins = Math.floor((seconds % 3600) / 60);
+  const secs = Math.floor(seconds % 60);
+  return hrs ? `${String(hrs).padStart(2, "0")}:${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}` : `${String(mins).padStart(2, "0")}:${String(secs).padStart(2, "0")}`;
+}
+
+function updateReplayVisuals() {
+  const route = selectedRoute();
+  if (!route) {
+    if (replayMarker) replayMarker.getElement().hidden = true;
+    const source = map.getSource(REPLAY_SOURCE);
+    if (source) source.setData({ type: "FeatureCollection", features: [] });
+    return;
+  }
+  const index = Math.max(0, Math.min(route.points.length - 1, state.replayIndex));
+  const point = route.points[index];
+  if (replayMarker) {
+    replayMarker.getElement().hidden = false;
+    replayMarker.setLngLat([point.lon, point.lat]);
+  }
+  const source = map.getSource(REPLAY_SOURCE);
+  if (source) {
+    const shown = route.points.slice(0, Math.max(2, index + 1));
+    const stride = Math.max(1, Math.ceil(shown.length / 1200));
+    const coordinates = shown.filter((_, itemIndex) => itemIndex % stride === 0 || itemIndex === shown.length - 1).map((p) => [p.lon, p.lat]);
+    source.setData({ type: "Feature", properties: {}, geometry: { type: "LineString", coordinates } });
+  }
+  $("replay-range").value = String(index);
+  const firstTime = route.points[0].time;
+  const pointTime = point.time;
+  const elapsed = firstTime !== null && pointTime !== null ? (pointTime - firstTime) / 1000 : index / Math.max(1, route.points.length - 1) * 7200;
+  $("replay-time").textContent = `${formatDuration(elapsed)} · ${Math.round(point.alt).toLocaleString("es-ES")} m`;
+}
+
+function stopReplay() {
+  if (replayFrame !== null) cancelAnimationFrame(replayFrame);
+  replayFrame = null;
+  state.replaying = false;
+  const button = $("replay-button");
+  if (button) button.textContent = "▶ Reproducir";
+}
+
+function replayTick(now) {
+  const route = selectedRoute();
+  if (!route || !state.replaying) return stopReplay();
+  const fraction = Math.min(1, Math.max(0, (now - replayStarted) / replayDuration));
+  state.replayIndex = Math.round(fraction * (route.points.length - 1));
+  updateReplayVisuals();
+  if (fraction >= 1) stopReplay();
+  else replayFrame = requestAnimationFrame(replayTick);
+}
+
+function toggleReplay() {
+  const route = selectedRoute();
+  if (!route) return;
+  if (state.replaying) { stopReplay(); return; }
+  if (state.replayIndex >= route.points.length - 1) state.replayIndex = 0;
+  replayDuration = Math.min(20000, Math.max(5000, route.points.length * 18));
+  replayStarted = performance.now() - state.replayIndex / Math.max(1, route.points.length - 1) * replayDuration;
+  state.replaying = true;
+  $("replay-button").textContent = "Ⅱ Pausar";
+  replayFrame = requestAnimationFrame(replayTick);
 }
 
 function updateStats() {
@@ -434,7 +621,46 @@ function updateStats() {
   $("altitude-max").innerHTML = `${Math.round(peak).toLocaleString("es-ES")} <small>m</small>`;
   $("empty-state").hidden = state.routes.length > 0;
   $("clear-routes").hidden = state.routes.length === 0;
+  $("annual-summary-button").hidden = !state.routes.some((route) => /^20\d{2}-/.test(route.date || ""));
   $("map-status").textContent = state.routes.length ? `${state.routes.length} ${state.routes.length === 1 ? "RUTA CARGADA" : "RUTAS CARGADAS"}` : "MAPA DE VUELOS";
+}
+
+function openAnnualSummary() {
+  const years = [...new Set(state.routes.map((route) => route.date?.slice(0, 4)).filter((year) => /^20\d{2}$/.test(year || "")))].sort().reverse();
+  if (!years.length) return say("Carga rutas con fecha para crear el resumen anual.");
+  const year = years.includes(state.year) ? state.year : years[0];
+  const routes = state.routes.filter((route) => route.date?.startsWith(`${year}-`));
+  const months = Array.from({ length: 12 }, (_, index) => ({ label: new Intl.DateTimeFormat("es", { month: "short" }).format(new Date(2024, index, 1)).replace(".", ""), count: 0 }));
+  for (const route of routes) {
+    const month = Number(route.date.slice(5, 7)) - 1;
+    if (month >= 0 && month < 12) months[month].count++;
+  }
+  const maximum = Math.max(1, ...months.map((month) => month.count));
+  const distance = routes.reduce((sum, route) => sum + route.distance, 0);
+  const altitude = routes.reduce((peak, route) => Math.max(peak, route.maxAltitude), 0);
+  const highlight = routes.reduce((best, route) => !best || route.maxAltitude > best.maxAltitude ? route : best, null);
+  $("summary-title").textContent = `Tu ${year} en el aire`;
+  $("summary-flights").textContent = String(routes.length);
+  $("summary-distance").textContent = `${Math.round(distance).toLocaleString("es-ES")} km`;
+  $("summary-altitude").textContent = `${Math.round(altitude).toLocaleString("es-ES")} m`;
+  $("summary-highlight").textContent = highlight ? `Tu vuelo más alto fue ${highlight.name}, a ${Math.round(highlight.maxAltitude).toLocaleString("es-ES")} m.` : "Aún no hay vuelos para este año.";
+  const bars = $("month-bars");
+  bars.replaceChildren();
+  for (const month of months) {
+    const column = document.createElement("div");
+    column.className = "month-column";
+    const count = document.createElement("b");
+    count.textContent = month.count ? String(month.count) : "";
+    const bar = document.createElement("span");
+    bar.className = "month-bar";
+    bar.style.setProperty("--bar-height", `${month.count / maximum * 100}%`);
+    bar.setAttribute("aria-hidden", "true");
+    const label = document.createElement("small");
+    label.textContent = month.label;
+    column.append(count, bar, label);
+    bars.append(column);
+  }
+  $("year-summary").showModal();
 }
 
 function refresh() {
@@ -491,6 +717,17 @@ function installMapLayers() {
   addTerrain();
   addImagery();
   addGroundRoutes();
+  if (!map.getSource(REPLAY_SOURCE)) map.addSource(REPLAY_SOURCE, { type: "geojson", data: { type: "FeatureCollection", features: [] } });
+  if (!map.getLayer("altura-replay-line")) {
+    map.addLayer({ id: "altura-replay-line", type: "line", source: REPLAY_SOURCE, layout: { "line-cap": "round", "line-join": "round" }, paint: { "line-color": "#ffffff", "line-width": 4, "line-opacity": 0.95 } });
+  }
+  if (!replayMarker) {
+    const element = document.createElement("div");
+    element.className = "replay-marker";
+    element.setAttribute("aria-hidden", "true");
+    replayMarker = new maplibregl.Marker({ element, anchor: "center" }).setLngLat([-3.7, 40.35]).addTo(map);
+  }
+  updateReplayVisuals();
   addAirportMarkers();
 }
 
@@ -519,6 +756,8 @@ $("reset-view").addEventListener("click", () => {
 $("clear-routes").addEventListener("click", () => {
   state.routes = [];
   state.selected = null;
+  state.replayIndex = 0;
+  void saveRoutes();
   refresh();
   clearAirportMarkers();
 });
@@ -526,9 +765,29 @@ fileInput.addEventListener("change", (event) => {
   void acceptFiles(event.target.files);
   fileInput.value = "";
 });
+$("route-search").addEventListener("input", (event) => {
+  state.search = event.target.value;
+  renderRoutes();
+});
+$("year-filter").addEventListener("change", (event) => {
+  state.year = event.target.value;
+  renderRoutes();
+});
+$("replay-range").addEventListener("input", (event) => {
+  stopReplay();
+  state.replayIndex = Number(event.target.value) || 0;
+  updateReplayVisuals();
+});
+$("replay-button").addEventListener("click", toggleReplay);
+$("annual-summary-button").addEventListener("click", openAnnualSummary);
+$("close-details").addEventListener("click", () => {
+  state.selected = null;
+  refresh();
+});
 
 map.on("load", () => {
   installMapLayers();
+  if (state.routes.length) fitRoutes();
   map.on("zoom", () => {
     if (state.threeD && flightLayer?.rebuild) {
       flightLayer.rebuild();
@@ -539,6 +798,7 @@ map.on("load", () => {
     if (event.error) console.warn("Error de mapa:", event.error.message || event.error);
   });
 });
+void restoreRoutes();
 
 window.addEventListener("dragenter", (event) => {
   if (!Array.from(event.dataTransfer?.types || []).includes("Files")) return;
