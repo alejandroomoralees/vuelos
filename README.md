@@ -8,6 +8,7 @@ Altura muestra y analiza rutas de vuelo a partir de archivos KML de FlightAware.
 - Extrae vuelo, fecha y aeropuertos del nombre FlightAware; convierte a IATA aeropuertos españoles y destinos internacionales habituales.
 - Calcula distancia, altitud y velocidad según los datos disponibles en cada archivo.
 - Dibuja las rutas en mapa satélite 3D con relieve, reproducción y perfil de altitud.
+- Permite activar sobre España la cartografía VFR oficial de ENAIRE.
 - Incluye búsqueda, filtro anual, resumen de vuelos por año y modo claro.
 - Enlaza con [ENAIRE Insignia VFR](https://insigniavfr.enaire.es/) y las [cartas VFR500 oficiales](https://aip.enaire.es/AIP/CartasInsigniaImpresas-es.html).
 
