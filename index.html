@@ -16,6 +16,7 @@
   <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/fflate@0.8.2/umd/index.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script defer src="route-metrics.js"></script>
   <script defer src="app.js"></script>
   <script defer src="storage.js"></script>
   <script defer src="airport-data.js"></script>
@@ -73,7 +74,7 @@
   <main class="map-workspace">
     <div id="map" role="application" aria-label="Mapa interactivo de vuelos"></div>
     <div id="map3d" class="maplibre-overlay" aria-label="Mapa de vuelos en relieve 3D y vista satélite"></div>
-    <div class="map-legend" id="map-legend"><span class="legend-title">Altitud</span><div class="legend-gradient altitude-gradient"></div><div class="legend-values"><span id="legend-low">0 m</span><span id="legend-high">— m</span></div></div>
+    <div class="map-legend" id="map-legend"><span class="legend-title">Altitud</span><div class="legend-gradient altitude-gradient"></div><div class="legend-values"><span id="legend-low">0 m</span><span id="legend-high">— m</span></div><small id="legend-note">El color muestra la altitud de la ruta</small></div>
     <div class="map-badge"><span>ALTURA</span><b>REGISTRO DE VUELOS</b><small id="map-point-count">Sin datos</small></div>
     <div class="map-tools-mobile"><button id="mobile-sidebar" aria-controls="sidebar" aria-expanded="false">▤ Estadísticas</button><button id="mobile-layers" aria-controls="right-buttons" aria-expanded="false">◉ Capas</button></div>
     <section class="replay-bar" id="replay-bar" aria-label="Reproducción de vuelos"><button class="replay-play" id="replay-play" title="Reproducir vuelos">▶</button><button class="replay-all" id="replay-all">Reproducir todo</button><div class="replay-track"><span class="replay-current" id="replay-current">Lista para despegar</span><input type="range" id="replay-range" min="0" max="1000" value="0" /><div class="replay-times"><span>Inicio</span><span id="replay-clock">00:00</span><span>Final</span></div></div><button class="replay-speed" id="replay-speed">1×</button></section>

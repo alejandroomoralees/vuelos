@@ -36,31 +36,37 @@ const osmStyle = {
 
 function getData() {
   const flights = window.alturaGetFlights?.() || [];
-  const layer = window.alturaGetLayer?.() || "altitude";
+  const layer = window.alturaGetLayer?.() || 'altitude';
   const pointFeatures = [];
-  const routeFeatures = flights.filter(flight => flight.points.length > 1).map(flight => {
+  const routeFeatures = [];
+  for (const flight of flights.filter(item => item.points.length > 1)) {
     const step = Math.max(1, Math.ceil(flight.points.length / 1800));
     const points = flight.points.filter((_, index) => index % step === 0 || index === flight.points.length - 1);
-    const averageAltitude = flight.points.reduce((sum, point) => sum + (point.altitude || 0), 0) / flight.points.length;
-    const averageSpeed = flight.points.reduce((sum, point) => sum + (point.speed || 0), 0) / flight.points.length;
-    const color = colorFor(layer === "speed" ? averageSpeed : averageAltitude, layer);
-    for (let i = 0; i < flight.points.length; i += Math.max(1, step * 3)) {
-      const point = flight.points[i];
-      pointFeatures.push({ type: "Feature", properties: { weight: Math.min(1, .15 + (point.speed || 0) / 200) }, geometry: { type: "Point", coordinates: [point.lon, point.lat] } });
+    for (let index = 1; index < points.length; index++) {
+      const from = points[index - 1], to = points[index];
+      const altitudes = [from.altitude, to.altitude].filter(Number.isFinite);
+      const speeds = [from, to].filter(point => Number.isFinite(point.time) && Number.isFinite(point.speed)).map(point => point.speed);
+      const altitude = altitudes.length ? altitudes.reduce((sum, value) => sum + value, 0) / altitudes.length : null;
+      const speed = speeds.length ? speeds.reduce((sum, value) => sum + value, 0) / speeds.length : null;
+      const value = layer === 'speed' ? speed : altitude;
+      const color = layer === 'speed' && speed === null ? '#607382' : colorFor(value ?? 0, layer);
+      routeFeatures.push({
+        type: 'Feature',
+        properties: { id: flight.id, name: flight.name, color, altitude, speed, hasSpeed: speed !== null },
+        geometry: { type: 'LineString', coordinates: [[from.lon, from.lat, from.altitude || 0], [to.lon, to.lat, to.altitude || 0]] }
+      });
     }
-    return {
-      type: "Feature",
-      properties: { id: flight.id, name: flight.name, color, altitude: averageAltitude, speed: averageSpeed },
-      geometry: { type: "LineString", coordinates: points.map(point => [point.lon, point.lat, point.altitude || 0]) }
-    };
-  });
+    for (let index = 0; index < flight.points.length; index += Math.max(1, step * 3)) {
+      const point = flight.points[index];
+      pointFeatures.push({ type: 'Feature', properties: { weight: Math.min(1, .15 + (point.speed || 0) / 200) }, geometry: { type: 'Point', coordinates: [point.lon, point.lat] } });
+    }
+  }
   const airportGroups = window.alturaGetAirportGroups?.() || [];
-  routeData = { type: "FeatureCollection", features: routeFeatures };
-  heatData = { type: "FeatureCollection", features: pointFeatures };
-  airportData = { type: "FeatureCollection", features: airportGroups.map(airport => ({ type: "Feature", properties: { count: airport.count, arrivals: airport.arrivals, code: airport.code || "", name: airport.name || "Aeródromo sin identificar" }, geometry: { type: "Point", coordinates: [airport.lon, airport.lat] } })) };
+  routeData = { type: 'FeatureCollection', features: routeFeatures };
+  heatData = { type: 'FeatureCollection', features: pointFeatures };
+  airportData = { type: 'FeatureCollection', features: airportGroups.map(airport => ({ type: 'Feature', properties: { count: airport.count, arrivals: airport.arrivals, code: airport.code || '', name: airport.name || 'Aeródromo sin identificar' }, geometry: { type: 'Point', coordinates: [airport.lon, airport.lat] } })) };
   return { routeData, heatData, airportData, layer };
 }
-
 function distanceKm(a, b) {
   const rad = Math.PI / 180, dLat = (b.lat - a.lat) * rad, dLon = (b.lon - a.lon) * rad;
   const n = Math.sin(dLat / 2) ** 2 + Math.cos(a.lat * rad) * Math.cos(b.lat * rad) * Math.sin(dLon / 2) ** 2;
@@ -113,12 +119,19 @@ function createMap() {
       id: "flight-airports-layer", type: "circle", source: "flight-airports",
       paint: { "circle-radius": ["interpolate", ["linear"], ["get", "count"], 1, 4, 12, 9], "circle-color": "#172f3c", "circle-stroke-color": "#fff5e9", "circle-stroke-width": 2, "circle-opacity": .9 }
     });
+    const routePopup = new maplibregl.Popup({ closeButton: false, closeOnClick: false, offset: 10, className: "route-metric-popup" });
+    const updateRoutePopup = event => {
+      const properties = event.features?.[0]?.properties;
+      if (!properties) return;
+      routePopup.setLngLat(event.lngLat).setHTML(window.alturaSegmentTooltip?.(properties) || properties.name || "Ruta").addTo(map3d);
+    };
+    map3d.on("mouseenter", "flight-lines-layer", event => { map3d.getCanvas().style.cursor = "pointer"; updateRoutePopup(event); });
+    map3d.on("mousemove", "flight-lines-layer", updateRoutePopup);
+    map3d.on("mouseleave", "flight-lines-layer", () => { map3d.getCanvas().style.cursor = ""; routePopup.remove(); });
     map3d.on("click", "flight-lines-layer", event => {
       const id = event.features?.[0]?.properties?.id;
       if (id) window.alturaOpenFlight?.(id);
     });
-    map3d.on("mouseenter", "flight-lines-layer", () => { map3d.getCanvas().style.cursor = "pointer"; });
-    map3d.on("mouseleave", "flight-lines-layer", () => { map3d.getCanvas().style.cursor = ""; });
     map3d.on("click", "flight-airports-layer", event => {
       const feature = event.features?.[0];
       if (!feature) return;
