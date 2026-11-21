@@ -43,16 +43,10 @@ function getData() {
       geometry: { type: "LineString", coordinates: points.map(point => [point.lon, point.lat, point.altitude || 0]) }
     };
   });
-  const airportGroups = [];
-  for (const flight of flights) for (const point of [flight.points[0], flight.points.at(-1)]) {
-    if (!point) continue;
-    let airport = airportGroups.find(item => distanceKm(item, point) < 8);
-    if (!airport) { airport = { lat: point.lat, lon: point.lon, count: 0 }; airportGroups.push(airport); }
-    airport.count++;
-  }
+  const airportGroups = window.alturaGetAirportGroups?.() || [];
   routeData = { type: "FeatureCollection", features: routeFeatures };
   heatData = { type: "FeatureCollection", features: pointFeatures };
-  airportData = { type: "FeatureCollection", features: airportGroups.map(airport => ({ type: "Feature", properties: { count: airport.count }, geometry: { type: "Point", coordinates: [airport.lon, airport.lat] } })) };
+  airportData = { type: "FeatureCollection", features: airportGroups.map(airport => ({ type: "Feature", properties: { count: airport.count, arrivals: airport.arrivals, code: airport.code || "", name: airport.name || "Aeródromo sin identificar" }, geometry: { type: "Point", coordinates: [airport.lon, airport.lat] } })) };
   return { routeData, heatData, airportData, layer };
 }
 
@@ -114,6 +108,17 @@ function createMap() {
     });
     map3d.on("mouseenter", "flight-lines-layer", () => { map3d.getCanvas().style.cursor = "pointer"; });
     map3d.on("mouseleave", "flight-lines-layer", () => { map3d.getCanvas().style.cursor = ""; });
+    map3d.on("click", "flight-airports-layer", event => {
+      const feature = event.features?.[0];
+      if (!feature) return;
+      const properties = feature.properties || {};
+      new maplibregl.Popup({ closeButton: true, closeOnClick: true })
+        .setLngLat(feature.geometry.coordinates.slice(0, 2))
+        .setText(`${properties.name || "Aeródromo"}${properties.code ? ` · ${properties.code}` : ""}\n${properties.arrivals || 0} llegadas estimadas · ${properties.count || 0} visitas`)
+        .addTo(map3d);
+    });
+    map3d.on("mouseenter", "flight-airports-layer", () => { map3d.getCanvas().style.cursor = "pointer"; });
+    map3d.on("mouseleave", "flight-airports-layer", () => { map3d.getCanvas().style.cursor = ""; });
     refreshMapData();
     applyMode();
   });

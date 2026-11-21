@@ -24,7 +24,7 @@ Abre `http://localhost:8000` y añade archivos `.kml` o `.kmz`.
 - Enlaces que guardan la vista y los filtros del mapa, sin incluir las trazas privadas.
 - Exportación del mapa como imagen, exportación de trazas a KML y descarga de una tarjeta Wrapped.
 - Interfaz adaptable a móvil y escritorio.
-- Vistas 3D de relieve y globo mediante MapLibre.
+- Vistas 3D de relieve y globo mediante MapLibre, con los mismos aeropuertos y recuentos que en el mapa 2D.
 - Recorrido guiado por las zonas donde más se concentran las trazas.
 
 ## Datos y servicios externos
