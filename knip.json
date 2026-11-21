@@ -1,0 +1,34 @@
+{
+  "$schema": "https://unpkg.com/knip@6/schema.json",
+  // Test seams. `npx knip --production` lists the exports of the frontend
+  // that only the tests import, some hundreds of them: the pure parts a module is built
+  // of, the constants a test holds a behaviour to, and the functions that
+  // reset the state of a module between tests. They are exported so the
+  // unit tests reach those parts rather than drive them through the page,
+  // and that is the policy: an export the app does not use is fine while a
+  // test does. So `lint:unused` runs the production pass for unused files
+  // alone (`--include files`), and this pass, which counts the tests as
+  // users, for the exports: one that neither the app nor a test imports
+  // still fails. The entry points' own exports are checked too
+  // (`includeEntryExports`): each is what a lazy bundle hands the app.
+  "entry": [
+    "flown/frontend/mapApp.ts!",
+    "flown/frontend/features.ts!",
+    "flown/frontend/wrapped.ts!",
+    "flown/frontend/search.ts!",
+    "flown/frontend/extras.ts!",
+    "flown/frontend/local.ts!",
+    "flown/frontend/services/localWorker.ts!",
+    "scripts/*.js",
+    "tests/**/*.test.ts",
+    "tests/e2e/*.spec.ts"
+  ],
+  "project": [
+    "flown/frontend/**/*.ts!",
+    "tests/**/*.ts",
+    "*.js",
+    "scripts/*.js"
+  ],
+  "ignoreDependencies": ["flag-icons"],
+  "includeEntryExports": true
+}

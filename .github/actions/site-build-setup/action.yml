@@ -1,0 +1,80 @@
+---
+# What the jobs that build a site from the flights do before they build it:
+# Python, uv and Node.js with the npm cache, the dependencies, the JavaScript
+# bundles, and the caches of the OurAirports database and the elevation
+# tiles. The unit, e2e-sites, pyodide and site jobs of test.yml use it, after
+# their checkout.
+name: Set up a site build
+description: Install the dependencies, build the bundles and restore the caches a site build reads
+inputs:
+  extras:
+    description: >-
+      The extras of pyproject.toml to install along with the runtime
+      dependencies, separated by spaces; empty for the runtime dependencies
+      alone
+    required: false
+    default: ""
+  flights:
+    description: >-
+      The directory of the flights the site is built from, whose files key
+      the cache of the elevation tiles (FLOWN_INPUT_DIR of test.yml)
+    required: false
+    default: data
+runs:
+  using: composite
+  steps:
+    - name: Set up Python, uv and Node.js
+      uses: ./.github/actions/setup-toolchain
+      with:
+        python: "true"
+    - name: Install Python dependencies
+      shell: bash
+      env:
+        EXTRAS: ${{ inputs.extras }}
+      run: |
+        args=()
+        for extra in $EXTRAS; do args+=(--extra "$extra"); done
+        uv sync --locked "${args[@]}"
+    - name: Install npm dependencies
+      shell: bash
+      run: npm ci
+    - name: Build the JavaScript bundle
+      shell: bash
+      run: npm run build
+    - name: Compute the weekly cache key
+      id: week
+      shell: bash
+      run: echo "week=$(date +%G-%V)" >> "$GITHUB_OUTPUT"
+    # Only the CSVs: a failed download leaves a marker file behind that
+    # suppresses retries for an hour, and a cache saved with it would hand
+    # that to every job restoring it. During an outage the build falls back
+    # to an earlier week's copy.
+    - name: Cache the OurAirports database
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: |
+          ~/.cache/flown/airports.csv
+          ~/.cache/flown/runways.csv
+        key: ourairports-${{ steps.week.outputs.week }}
+        restore-keys: ourairports-
+    # The elevation tiles (flown/terrain_fetch.py) the ground under the
+    # flights is sampled from, with the decoded pixels of each beside it
+    # (.pixels): about 90 MB for data/, half of it each. The flights are
+    # those of the `flights` input. A tile never changes upstream, so the
+    # cache of the last set of flights is restored
+    # for the next and only the tiles of new flights are downloaded; it is
+    # saved again under the new set. A tile that failed to download is
+    # simply not in it, so no failure is carried over. The pixels carry the
+    # CRC of their tile and a version of their layout, and a file that does
+    # not match either is decoded again. The key covers the terrain modules
+    # (terrain*.py: which tiles are fetched, at what zoom, and the layout of
+    # the pixels) and their decoder (png.py) as well: a cache is only saved
+    # under a key it was not restored from, so with the flights alone in the
+    # key the pixels of a new layout were decoded again on every run and
+    # never saved (the cache stayed at the old layout).
+    - name: Cache the elevation tiles
+      uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+      with:
+        path: ~/.cache/flown/terrain
+        key: terrain-${{ hashFiles(format('{0}/**/*.kml', inputs.flights), format('{0}/**/*.kmz', inputs.flights), 'flown/terrain*.py', 'flown/png.py') }}
+        restore-keys: terrain-

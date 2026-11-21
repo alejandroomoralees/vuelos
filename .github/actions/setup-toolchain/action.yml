@@ -1,0 +1,53 @@
+---
+# Python, uv and Node.js at the versions of .python-version, the uv release
+# below and .nvmrc, with the npm cache, for the jobs of test.yml after their
+# checkout, so each action is pinned in one place. Installing is left to the
+# jobs: each installs something else, with `uv sync --locked` into the
+# virtual environment set up here.
+name: Set up the toolchain
+description: Set up Python, uv and Node.js with the npm cache
+inputs:
+  python:
+    description: >-
+      Whether the job runs Python: "true" sets up Python, uv and an
+      activated virtual environment (.venv) for `uv sync`
+    required: false
+    default: "false"
+  npm-cache:
+    description: Whether to restore and save the npm cache, for a job that runs `npm ci`
+    required: false
+    default: "true"
+runs:
+  using: composite
+  steps:
+    # The interpreter uv creates the environment with; uv finds it on PATH
+    # and downloads none of its own. .python-version names the minor release
+    # only: without check-latest each job took the patch release its runner
+    # image had cached, and one run had 3.14.9 in some jobs and 3.14.8 in
+    # others, the job that deploys among them
+    - name: Set up Python
+      if: inputs.python == 'true'
+      uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0 # v7.1.0
+      with:
+        python-version-file: .python-version
+        check-latest: true
+    # The release here and the uv image of the Dockerfile are the same
+    # (scripts/check_pins.py). Dependabot moves neither to another release:
+    # move both by hand.
+    # The environment it activates is on PATH for every later step, so the
+    # tools `uv sync` installs run by name. Without a cache: an uncached
+    # `uv sync` fetched and prepared its 40 packages in under half a second,
+    # while restoring and saving the cache took 2 to 3 s a job and kept
+    # about 300 MB of caches for every pull request.
+    - name: Set up uv
+      if: inputs.python == 'true'
+      uses: astral-sh/setup-uv@68559e99cc807c1eb7e9238fd43a15bba460eec2 # v10.3.3
+      with:
+        version: "0.13.5"
+        activate-environment: true
+        enable-cache: false
+    - name: Set up Node.js
+      uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+      with:
+        node-version-file: .nvmrc
+        cache: ${{ inputs.npm-cache == 'true' && 'npm' || '' }}

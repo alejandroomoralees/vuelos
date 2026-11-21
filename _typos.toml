@@ -1,0 +1,49 @@
+[files]
+# typos skips what .gitignore lists (the generated site and bundles); lock
+# files are tracked but not worth spell checking
+extend-exclude = [
+  "*.lock",
+  "package-lock.json",
+  # Vendored OurAirports rows: IATA codes such as MUC and BRE are not words
+  "tests/fixtures/*.csv",
+]
+
+[default.extend-words]
+# Unicode general category "decimal number", used in Hypothesis strategies
+Nd = "Nd"
+# The PNG filter of Alan W. Paeth (flown/png.py)
+paeth = "paeth"
+# The National Elevation Dataset, in the attribution of the terrain tiles
+NED = "NED"
+# German month names, which flown/date_words.py lists for the names
+januar = "januar"
+februar = "februar"
+juni = "juni"
+juli = "juli"
+oktober = "oktober"
+dezember = "dezember"
+# French month names without their accents, and the German "or" and "days",
+# which flown/date_words.py lists as months and as no months
+aout = "aout"
+decembre = "decembre"
+oder = "oder"
+tage = "tage"
+# The time zone of India and Ireland, and the German "is", which
+# flown/date_tokens.py tells apart by their case
+ist = "ist"
+# The German "before" of Vorweihnachten, which flown/date_words.py
+# matches as a part of the word
+vor = "vor"
+# The abbreviations of August in Polish and of March in Czech, which
+# flown/date_words.py lists, "sie" a German word as well
+sie = "sie"
+bre = "bre"
+# The abbreviation of Monday in Polish, which flown/date_words.py lists
+pn = "pn"
+# The start of a short share token, its format version and the first
+# character of its length (tests/frontend/unit/state/shareToken.test.ts)
+BA = "BA"
+
+[default.extend-identifiers]
+# The plural of the image format, which typos would split into "PN" and "Gs"
+PNGs = "PNGs"

@@ -1,0 +1,201 @@
+[build-system]
+requires = ["setuptools>=84.1.0"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "flown"
+dynamic = ["version"]
+description = "Turns KML flight logs into a static site of where you have flown: a heatmap, the flights, airports, statistics, replays, a 3D view and a year in review."
+readme = "README.md"
+requires-python = ">=3.14"
+license = "Apache-2.0"
+classifiers = [
+    "Development Status :: 4 - Beta",
+    "Intended Audience :: End Users/Desktop",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.14",
+    "Topic :: Scientific/Engineering :: GIS",
+    "Topic :: Scientific/Engineering :: Visualization",
+]
+dependencies = [
+    "rcssmin>=1.3.0",
+    "minify-html>=0.18.1",
+    "lxml>=6.1.3",
+]
+
+[project.optional-dependencies]
+# Single source of the Python dependencies, which uv.lock pins with their
+# hashes (`make lock`, see [tool.uv] below). Dependabot raises a range here
+# and the pin in uv.lock in the same pull request.
+test = [
+    "pytest>=9.2.0",
+    "pytest-cov>=7.1.0",
+    "pytest-xdist>=3.8.0",
+    "pytest-randomly>=5.1.0",
+    "coverage>=7.17.2",
+    "hypothesis>=6.170.15",
+    "lxml-stubs>=0.5.1",
+]
+dev = [
+    "ruff>=0.17.4",
+    "mypy>=2.4.1",
+    "pip-audit>=2.10.1",
+    # The audit of .github/workflows (make lint and the CI lint job)
+    "zizmor>=1.32.0",
+    # scripts/check_pins.py
+    "packaging>=26.3",
+    # The spell check (make lint, the pre-commit hook and the CI lint job),
+    # a prebuilt binary of crate-ci/typos
+    "typos>=1.52.2",
+    # The file checks of the pre-commit hooks (final newline, trailing
+    # whitespace, merge conflict markers, TOML and YAML), which the CI lint
+    # job runs as well
+    "pre-commit-hooks>=6.0.0",
+]
+
+[dependency-groups]
+# What build-system.requires asks for, so that uv.lock pins it with its
+# hashes: CI builds the wheel without build isolation from it, where an
+# isolated build would fetch whatever release satisfies the range, with no
+# hash. A group rather than an extra, so the wheel does not offer it to
+# users. Dependabot raises both ranges in the same pull request;
+# scripts/check_pins.py checks that the pin satisfies
+# build-system.requires as well, for a range raised by hand.
+build = [
+    "setuptools>=84.1.0",
+]
+
+[project.urls]
+Homepage = "https://github.com/saschagrunert/flown"
+Repository = "https://github.com/saschagrunert/flown"
+
+[tool.uv]
+# The project itself is never installed into the environment `uv sync`
+# creates: the tests and the site builds run from the checkout, and building
+# it there would fetch setuptools with build isolation, unpinned. The wheel
+# is built on its own (the packaging job of the test workflow).
+package = false
+# Only releases at least a week old are locked, a day less than Dependabot
+# waits (see dependabot.yml for why), which a release pulled again within
+# days never reaches. Here and not on the command line of `make lock`: uv
+# records it in uv.lock, and `uv sync --locked` without the same option
+# takes the lock for out of date. A security fix younger than that needs an
+# entry in exclude-newer-package for its package.
+exclude-newer = "7 days"
+
+[tool.setuptools.dynamic]
+version = {attr = "flown.__version__"}
+
+[project.scripts]
+flown = "flown.cli:main"
+
+[tool.setuptools.packages.find]
+include = ["flown*"]
+
+[tool.setuptools.package-data]
+flown = [
+    "templates/*",
+    # The vendored third-party files sit in a subdirectory, which the
+    # patterns below do not reach
+    "static/vendor/*.mjs",
+    "static/vendor/*.css",
+    "static/*.js",
+    "static/*.css",
+    "static/*.png",
+    "static/*.svg",
+    "static/*.ico",
+    "static/*.json",
+    "py.typed",
+]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = [
+    "--tb=short",
+    "--strict-markers",
+]
+# A test that hangs (a pool waiting for a worker that never answers) dumps
+# every thread's stack after five minutes, rather than silently using up
+# the job's time
+faulthandler_timeout = 300
+markers = [
+    # A copy of the repository with flights of its own skips them with
+    # FLOWN_OWN_FLIGHTS=1 (see tests/conftest.py and doc/hosting.md)
+    "repo_data: reads named flights of this repository's data/",
+]
+# A deprecation in lxml or the next Python release fails the suite instead
+# of scrolling past. Hypothesis warns about its own generator when it sets
+# it up, sometimes (a guess from its reference count, which Python 3.14
+# counts differently), and that failed a round trip test at random.
+filterwarnings = [
+    "error",
+    "ignore:It looks like `register_random` was passed an object:hypothesis.errors.HypothesisWarning",
+]
+
+[tool.coverage.run]
+branch = true
+# The scripts are measured too: pre_push.py keeps real dates from being
+# pushed and check_pins.py gates the pins that have to agree, and a gate
+# that stops checking fails open. `pytest --cov` without a value measures
+# these.
+source = ["flown", "scripts"]
+
+[tool.coverage.report]
+# One to three points below what the suite reaches, so a real regression fails
+# the build while a new defensive branch does not (see vitest.config.js for the
+# same policy on the frontend side). Codecov reports the coverage of the
+# changed lines as well, as a status no pull request has to pass.
+fail_under = 97
+exclude_also = [
+    "if TYPE_CHECKING:",
+    "if __name__ == .__main__.:",
+]
+
+[tool.mypy]
+python_version = "3.14"
+strict = true
+warn_unused_configs = true
+mypy_path = "stubs"
+exclude = [
+    # Local build and output directories (a wheel build leaves a second copy of
+    # the package in build/lib)
+    "^(build|dist|out|site|venv|docs|htmlcov|coverage)/",
+]
+
+[[tool.mypy.overrides]]
+module = "tests.*"
+disallow_untyped_defs = false
+disallow_incomplete_defs = false
+disallow_untyped_calls = false
+disallow_untyped_decorators = false
+
+[tool.ruff]
+target-version = "py314"
+
+[tool.ruff.lint]
+select = [
+    "E", "F", "W", "UP", "B", "SIM", "I", "PLR", "S", "PT", "RUF",
+    "C4", "PERF", "ISC", "PIE", "TC", "RET", "ERA", "N",
+    "C90", "PLW", "PLC", "PLE", "DTZ", "BLE", "ARG", "TRY300", "TRY301", "FURB",
+]
+ignore = [
+    "PLR2004",
+    "PLR0911",
+    "PLR0912",
+    "PLR0913",
+    "PLR0915",
+    "PLR0917",
+    "PT006",
+]
+
+[tool.ruff.lint.mccabe]
+# One exemption, with its reason next to it: png._unfilter
+max-complexity = 15
+
+[tool.ruff.lint.per-file-ignores]
+# ARG: a fixture asked for its side effect and a stand-in that keeps the
+# signature of what it replaces take arguments they do not use. PLC0415: a
+# test imports inside itself to see a module as a monkeypatch left it, or
+# the way the package's lazy imports load it.
+"tests/**" = ["S101", "ARG", "PLC0415"]
+"scripts/**" = ["S311"]
