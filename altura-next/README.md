@@ -10,7 +10,7 @@ Prototipo de una nueva aplicación web para visualizar vuelos a partir de archiv
 - Rutas coloreadas por altitud o velocidad, con perfil de elevación 3D.
 - Perfil de altitud, reproducción de la ruta y búsqueda con filtro por año.
 - Vista satélite, relieve, modo claro y centrado al norte.
-- Conversión de códigos ICAO de aeropuertos españoles conocidos a IATA.
+- Conversión de códigos ICAO de aeropuertos españoles y destinos internacionales habituales a IATA.
 - Historial guardado en el almacenamiento local del navegador; los KML no se suben.
 - Acceso a [Insignia VFR](https://insigniavfr.enaire.es/) y a las [cartas VFR500 oficiales](https://aip.enaire.es/AIP/CartasInsigniaImpresas-es.html) de ENAIRE.
 
