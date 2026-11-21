@@ -14,10 +14,8 @@
  * the map at both ends. Off the globe the map draws the relief under the
  * flights, and the ribbons stand on it.
  *
- * Flight heights and terrain relief use a 1:1 vertical scale at every
- * zoom. A flight at 1,000 ft above ground is drawn 1,000 ft above the
- * sampled terrain; at distant zooms this naturally appears close to the
- * surface because the map does not inflate vertical distances.
+ * Flight heights and terrain relief use a shared 2:1 vertical scale at
+ * every zoom. Both stay aligned, with exaggeration capped at 2x.
  *
  * This module is the policy: from which zoom the flights are drawn flat
  * and the relief level a zoom is drawn for (liftZoom.ts, which comes with
@@ -84,11 +82,11 @@ export function groundKey(step: number): `o${number}` {
 /**
  * Shared vertical scale for terrain and flight altitude, by relief level
  * from 0 on (the last value is used for every later level). Keeping both
- * values at 1 preserves the source data's physical altitude in the 3D
- * scene and prevents flights from floating above their real position.
+ * values at 2 restores visible relief while keeping the exaggeration at
+ * or below the requested 2x limit.
  */
 export const EXAGGERATION_BY_LEVEL: readonly number[] = [
-  1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
+  2, 2, 2, 2, 2, 2, 2, 2, 2, 2, 2,
 ];
 
 /**
