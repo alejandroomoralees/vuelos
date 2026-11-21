@@ -21,6 +21,19 @@ const SPANISH_AIRPORT_CODES = {
   GCTS: "TFS", GCXO: "TFN", GCLA: "SPC", GCLP: "LPA", GCFV: "FUE",
   GCRR: "ACE", GCHI: "VDE", GCGM: "GMZ",
 };
+const COMMON_AIRPORT_CODES = {
+  EGLL: "LHR", EGKK: "LGW", EGSS: "STN", EGGW: "LTN", EGCC: "MAN", EGPH: "EDI", EGNM: "LBA",
+  LFPG: "CDG", LFPO: "ORY", LFMN: "NCE", LFML: "MRS", LFBO: "TLS", LFBD: "BOD", LFRS: "NTE",
+  EHAM: "AMS", EBBR: "BRU", EDDF: "FRA", EDDM: "MUC", LSZH: "ZRH", LSGG: "GVA", LOWW: "VIE",
+  LIRF: "FCO", LIMC: "MXP", LIPZ: "VCE", LPPT: "LIS", LTFM: "IST", LGAV: "ATH", EIDW: "DUB",
+  EKCH: "CPH", ESSA: "ARN", EFHK: "HEL", ENGM: "OSL", EPWA: "WAW", LKPR: "PRG", LHBP: "BUD",
+  LROP: "OTP", LBSF: "SOF", LDZA: "ZAG", LYBE: "BEG", LJLJ: "LJU", LCLK: "LCA", LCPH: "PFO",
+  KJFK: "JFK", KEWR: "EWR", KBOS: "BOS", KATL: "ATL", KMIA: "MIA", KORD: "ORD", KDEN: "DEN",
+  KSEA: "SEA", KSFO: "SFO", KLAX: "LAX", KLAS: "LAS", KDFW: "DFW", KMCO: "MCO", KPHL: "PHL",
+  CYYZ: "YYZ", CYVR: "YVR", MMMX: "MEX", SBGR: "GRU", SAEZ: "EZE", OTHH: "DOH", OMDB: "DXB",
+  VHHH: "HKG", RJTT: "HND", RJAA: "NRT", WSSS: "SIN", VTBS: "BKK", ZBAA: "PEK", ZSPD: "PVG",
+  RKSI: "ICN", YSSY: "SYD", NZAA: "AKL",
+};
 const state = { routes: [], mode: "altitude", light: false, satellite: true, threeD: true, selected: null, search: "", year: "all", replayIndex: 0, replaying: false };
 const map = new maplibregl.Map({
   container: "map",
@@ -60,7 +73,7 @@ function say(message) {
 
 function codeToIata(code) {
   const token = (code || "").toUpperCase();
-  return token.length === 4 ? (SPANISH_AIRPORT_CODES[token] || token) : token;
+  return token.length === 4 ? (SPANISH_AIRPORT_CODES[token] || COMMON_AIRPORT_CODES[token] || token) : token;
 }
 
 function distanceKm(a, b) {
