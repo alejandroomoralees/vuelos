@@ -6,6 +6,8 @@ const STYLE = {
 };
 const SATELLITE_SOURCE = "altura-imagery";
 const ELEVATION_SOURCE = "altura-elevation";
+const VFR_AIRSPACE_SOURCE = "altura-enaire-vfr-airspace";
+const VFR_ROUTES_SOURCE = "altura-enaire-vfr-routes";
 const GROUND_SOURCE = "altura-routes-ground";
 const REPLAY_SOURCE = "altura-replay-route";
 const STORAGE_DB = "altura-flight-history";
@@ -34,7 +36,7 @@ const COMMON_AIRPORT_CODES = {
   VHHH: "HKG", RJTT: "HND", RJAA: "NRT", WSSS: "SIN", VTBS: "BKK", ZBAA: "PEK", ZSPD: "PVG",
   RKSI: "ICN", YSSY: "SYD", NZAA: "AKL",
 };
-const state = { routes: [], mode: "altitude", light: false, satellite: true, threeD: true, selected: null, search: "", year: "all", replayIndex: 0, replaying: false };
+const state = { routes: [], mode: "altitude", light: false, satellite: true, threeD: true, vfrChart: false, selected: null, search: "", year: "all", replayIndex: 0, replaying: false };
 const map = new maplibregl.Map({
   container: "map",
   style: STYLE.dark,
@@ -63,6 +65,7 @@ let replayFrame = null;
 let replayStarted = 0;
 let replayDuration = 12000;
 let storagePromise = null;
+let vfrErrorShown = false;
 
 function say(message) {
   toast.textContent = message;
@@ -381,6 +384,30 @@ function addImagery() {
   }
   if (!map.getLayer("altura-imagery-layer")) map.addLayer({ id: "altura-imagery-layer", type: "raster", source: SATELLITE_SOURCE, paint: { "raster-opacity": 1 } });
   map.setLayoutProperty("altura-imagery-layer", "visibility", state.satellite ? "visible" : "none");
+}
+
+function addVfrChart() {
+  const attribution = '<a href="https://insigniavfr.enaire.es/" target="_blank">Cartografía aeronáutica © ENAIRE</a>';
+  const services = [
+    { source: VFR_AIRSPACE_SOURCE, layer: "altura-enaire-vfr-airspace-layer", service: "InsigniaVFR_VIGOR_Aispace_v2" },
+    { source: VFR_ROUTES_SOURCE, layer: "altura-enaire-vfr-routes-layer", service: "InsigniaVFR_Aerovias_v1" },
+  ];
+  for (const entry of services) {
+    if (!map.getSource(entry.source)) {
+      map.addSource(entry.source, {
+        type: "raster",
+        tiles: [`https://servais.enaire.es/insignias/rest/services/INSIGNIA_VFR/${entry.service}/MapServer/export?bbox={bbox-epsg-3857}&size=256,256&format=png32&transparent=true&bboxSR=3857&imageSR=3857&dpi=96&f=image`],
+        tileSize: 256,
+        attribution,
+      });
+    }
+    if (!map.getLayer(entry.layer)) {
+      map.addLayer({ id: entry.layer, type: "raster", source: entry.source, paint: { "raster-opacity": 0.84, "raster-fade-duration": 0 } });
+    }
+    map.setLayoutProperty(entry.layer, "visibility", state.vfrChart ? "visible" : "none");
+  }
+  $("vfr-toggle").classList.toggle("is-active", state.vfrChart);
+  $("vfr-toggle").setAttribute("aria-pressed", String(state.vfrChart));
 }
 
 function addGroundRoutes() {
@@ -711,6 +738,16 @@ function setSatellite() {
   if (map.isStyleLoaded() && map.getLayer("altura-imagery-layer")) map.setLayoutProperty("altura-imagery-layer", "visibility", state.satellite ? "visible" : "none");
 }
 
+function toggleVfrChart() {
+  state.vfrChart = !state.vfrChart;
+  if (state.vfrChart) vfrErrorShown = false;
+  if (map.isStyleLoaded()) addVfrChart();
+  else {
+    $("vfr-toggle").classList.toggle("is-active", state.vfrChart);
+    $("vfr-toggle").setAttribute("aria-pressed", String(state.vfrChart));
+  }
+}
+
 function setLightMode() {
   state.light = !state.light;
   document.documentElement.dataset.theme = state.light ? "light" : "dark";
@@ -729,6 +766,7 @@ function setLightMode() {
 function installMapLayers() {
   addTerrain();
   addImagery();
+  addVfrChart();
   addGroundRoutes();
   if (!map.getSource(REPLAY_SOURCE)) map.addSource(REPLAY_SOURCE, { type: "geojson", data: { type: "FeatureCollection", features: [] } });
   if (!map.getLayer("altura-replay-line")) {
@@ -759,6 +797,7 @@ function toggleNorth() {
 
 $("theme-toggle").addEventListener("click", setLightMode);
 $("satellite-toggle").addEventListener("click", setSatellite);
+$("vfr-toggle").addEventListener("click", toggleVfrChart);
 $("terrain-toggle").addEventListener("click", apply3d);
 $("north-toggle").addEventListener("click", toggleNorth);
 $("altitude-mode").addEventListener("click", () => colorMode("altitude"));
@@ -808,6 +847,10 @@ map.on("load", () => {
     }
   });
   map.on("error", (event) => {
+    if (state.vfrChart && !vfrErrorShown && event.sourceId?.startsWith("altura-enaire-vfr-")) {
+      vfrErrorShown = true;
+      say("No se pudo cargar la cartografía VFR de ENAIRE. Puedes abrir Insignia desde el enlace del panel.");
+    }
     if (event.error) console.warn("Error de mapa:", event.error.message || event.error);
   });
 });
