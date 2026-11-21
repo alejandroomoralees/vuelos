@@ -24,7 +24,7 @@ node altura-next/serve.mjs
 
 Después abre `http://127.0.0.1:8000`. Se requieren conexión a Internet para descargar MapLibre, los estilos cartográficos, las imágenes satélite y los mosaicos de elevación.
 
-## Estado del reemplazo
+## Independencia e historial
 
-Esta carpeta es el primer paso del reemplazo progresivo. El resto del repositorio aún contiene el sitio y el historial previos. Por ese motivo se mantienen los avisos y la licencia Apache que acompañan a ese material; no se deben quitar hasta completar y revisar su retirada.
+El frontend nuevo está implementado en esta carpeta y no importa módulos del sitio anterior. Los archivos de la versión anterior se retiraron del árbol de trabajo y siguen disponibles en el historial Git y en la rama de respaldo. Se conservan `LICENSE` y `NOTICE` para documentar esos materiales históricos.
 
