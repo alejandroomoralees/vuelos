@@ -356,7 +356,6 @@ export class MapApp {
   private rejectMapReady!: (reason: unknown) => void;
   /** Where the request for the base style stands; "idle" before and between */
   private baseStyle: "idle" | "loading" | "dark" | "light" = "idle";
-  private baseStyleRequest = 0;
   /** Whether the one timed retry of the base style has been spent */
   private baseStyleRetried = false;
   /** Whether its failure has been said, which happens once a page */
@@ -566,10 +565,11 @@ export class MapApp {
     const yearSelect = domCache.get("year-select", HTMLSelectElement);
     const shipped = yearSelect?.value;
     restoreState(this);
-    this.setPageTheme(this.lightModeVisible);
+    document.documentElement.dataset["theme"] = this.lightModeVisible
+      ? "light"
+      : "dark";
     this.store.subscribe("lightModeVisible", (light) => {
-      this.setPageTheme(light);
-      this.baseStyleRequest++;
+      document.documentElement.dataset["theme"] = light ? "light" : "dark";
       this.baseStyle = "idle";
       this.baseStyleRetried = false;
       this.baseStyleToast = false;
@@ -918,7 +918,6 @@ export class MapApp {
     ) {
       return;
     }
-    const request = ++this.baseStyleRequest;
     this.baseStyle = "loading";
     try {
       const response = await fetch(
@@ -929,18 +928,12 @@ export class MapApp {
       const style = (await response.json()) as StyleSpecification;
       // `destroy()` leaves the map as it is, also for an answer that was
       // already being read when the request was aborted
-      if (
-        this.destroyed ||
-        request !== this.baseStyleRequest ||
-        mode !== (this.lightModeVisible ? "light" : "dark")
-      ) {
-        return;
-      }
+      if (this.destroyed || mode !== (this.lightModeVisible ? "light" : "dark")) return;
       this.baseStyle = mode;
       setBaseStyle(map, style);
       dismissToast(BASE_STYLE_UNAVAILABLE_MESSAGE);
     } catch (error) {
-      if (this.destroyed || request !== this.baseStyleRequest) return;
+      if (this.destroyed || mode !== (this.lightModeVisible ? "light" : "dark")) return;
       this.baseStyle = "idle";
       const message = error instanceof Error ? error.message : String(error);
       logError(`Base map style failed to load: ${message}`);
@@ -955,14 +948,6 @@ export class MapApp {
       this.baseStyleRetried = true;
       setTimeout(() => void this.loadBaseStyle(), BASE_STYLE_RETRY_MS);
     }
-  }
-
-  /** Keep the page chrome and the browser's theme colour in step. */
-  private setPageTheme(light: boolean): void {
-    document.documentElement.dataset["theme"] = light ? "light" : "dark";
-    document
-      .querySelector<HTMLMetaElement>('meta[name="theme-color"]')
-      ?.setAttribute("content", light ? "#f5f7fa" : "#141414");
   }
 
   /**

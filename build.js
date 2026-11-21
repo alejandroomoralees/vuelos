@@ -445,9 +445,11 @@ function compareBundles(before, after, names) {
 // the chunk, so the sum is what counts). What the map draws cannot move to a
 // lazy bundle, since a link may open turned, as a globe or in 3D; what only
 // a panel or a mode shows can. The reading of a shared link's token stays
-// here too: it is resolved before anything reads the state. 169.31 KB and
-// 59.8 KB gzipped.
-const BUDGET_APP = { raw: 169.5 * 1024, gzip: 60 * 1024 };
+// here too: it is resolved before anything reads the state. Satellite and
+// 3D as the start view, the light map theme and airport-code labels add
+// 170.0 KB and 59.95 KB gzipped; leave the usual 2 KB raw and 1 KB gzip
+// headroom for the app bundle.
+const BUDGET_APP = { raw: 172 * 1024, gzip: 61 * 1024 };
 // The feature bundle: replay and Replay all, the 3D view (relief, ribbons,
 // heat cloud), the imagery, the flight profile, the cross-section, the
 // hotspot tour and the intro of a link to shared flights. Fetched only when
