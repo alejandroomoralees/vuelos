@@ -1,27 +1,32 @@
 # Altura
 
-Altura integra una adaptación en español de [Flown](https://github.com/saschagrunert/flown), con su interfaz, mapa y herramientas de análisis de vuelos. Mantiene las funciones originales: mapa de calor, rutas coloreadas por altitud y velocidad, aeropuertos, filtros, búsqueda, perfiles, reproducción, vista 3D/globo, satélite y resumen anual.
+Altura muestra y analiza rutas de vuelo a partir de archivos KML de FlightAware. La aplicación activa es [`altura-next/`](altura-next/), una implementación independiente escrita para este proyecto.
 
-La base de Flown se distribuye bajo Apache 2.0. Se conserva el texto de la licencia y los avisos de copyright; las modificaciones locales se indican en los archivos modificados. Consulta [LICENSE](LICENSE) y [NOTICE](NOTICE).
+## Funciones
 
-La carta VFR de España se abre en el visor oficial [Insignia VFR de ENAIRE](https://insigniavfr.enaire.es/). La antigua capa global de OpenFlightMaps se retiró porque no ofrece cobertura de España.
+- Lee KML localmente y conserva el historial en el almacenamiento de este navegador.
+- Extrae vuelo, fecha y aeropuertos del nombre FlightAware; convierte a IATA aeropuertos españoles y destinos internacionales habituales.
+- Calcula distancia, altitud y velocidad según los datos disponibles en cada archivo.
+- Dibuja las rutas en mapa satélite 3D con relieve, reproducción y perfil de altitud.
+- Permite activar sobre España la cartografía VFR oficial de ENAIRE.
+- Incluye búsqueda, filtro anual, resumen de vuelos por año y modo claro.
+- Enlaza con [ENAIRE Insignia VFR](https://insigniavfr.enaire.es/) y las [cartas VFR500 oficiales](https://aip.enaire.es/AIP/CartasInsigniaImpresas-es.html).
 
-## Desarrollo local
+## Ejecutar localmente
 
-Necesitas Node.js 26 o posterior y Python 3.14 o posterior. Desde la raíz del repositorio:
+Se requiere Node.js. Desde la raíz del repositorio:
 
 ```sh
-npm ci
-python -m pip install .
-npm run build
-python -m flown data --output-dir docs
-python -m http.server 8000 --directory docs
+node altura-next/serve.mjs
 ```
 
-Abre `http://localhost:8000`. Puedes arrastrar KML/KMZ a la aplicación; se procesan en el navegador y no se suben al servidor. Los archivos de vuelo dentro de `data/` se excluyen de Git por privacidad.
-
-La carpeta [legacy-altura](legacy-altura/) conserva el prototipo anterior de este repositorio como referencia; no forma parte del sitio publicado.
+Abre `http://127.0.0.1:8000`. El mapa descarga estilos, imágenes y elevación de sus proveedores; los KML no se envían a esos servicios.
 
 ## Publicación
 
-El workflow de [GitHub Pages](.github/workflows/pages.yml) compila y publica el sitio al actualizar `main`. En GitHub, configura **Settings → Pages → Build and deployment → Source: GitHub Actions**. No se incluyen trazas KML/KMZ privadas en el despliegue.
+GitHub Pages publica los archivos estáticos de `altura-next/` al actualizar `main`, mediante [pages.yml](.github/workflows/pages.yml).
+
+## Licencias e historial
+
+El árbol de trabajo actual contiene la implementación independiente de Altura. El historial de esta rama y las ramas de respaldo conservan versiones anteriores que incluían materiales derivados de Flown. Se mantienen `LICENSE` y `NOTICE` para preservar los avisos asociados a esas revisiones; el historial identifica los commits y sus autores originales.
+

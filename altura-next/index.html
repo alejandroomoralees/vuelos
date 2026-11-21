@@ -1,0 +1,113 @@
+<!doctype html>
+<html lang="es" data-theme="dark">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="color-scheme" content="dark light" />
+    <meta name="theme-color" content="#10141c" />
+    <title>Altura — Tus vuelos, en perspectiva</title>
+    <link rel="preconnect" href="https://basemaps.cartocdn.com" />
+    <link rel="preconnect" href="https://server.arcgisonline.com" />
+    <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@6.19.0/dist/maplibre-gl.css" />
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main class="app-shell">
+      <aside class="sidebar" aria-label="Panel de vuelos">
+        <header class="brand-row">
+          <a class="brand" href="./" aria-label="Altura, inicio">
+            <span class="brand-mark" aria-hidden="true">A</span>
+            <span><b>ALTURA</b><small>TUS VUELOS, EN PERSPECTIVA</small></span>
+          </a>
+          <button id="theme-toggle" class="icon-button" type="button" title="Cambiar a modo claro" aria-label="Cambiar a modo claro">☼</button>
+        </header>
+
+        <section class="welcome-card">
+          <p class="eyebrow">EXPLORA TU HISTORIAL</p>
+          <h1>Cada ruta<br />cuenta algo.</h1>
+          <p class="muted">Carga tus archivos KML y descubre por dónde has volado.</p>
+          <label class="upload-button" for="kml-files"><span aria-hidden="true">＋</span> Añadir archivos KML</label>
+          <input id="kml-files" type="file" accept=".kml,application/vnd.google-earth.kml+xml" multiple hidden />
+          <p class="privacy-note"><span class="lock" aria-hidden="true">◈</span> Los archivos se procesan en este dispositivo.</p>
+        </section>
+
+        <section class="stats-grid" aria-label="Resumen de vuelos">
+          <div class="stat-card"><span>VUELOS</span><strong id="flight-count">0</strong></div>
+          <div class="stat-card"><span>DISTANCIA</span><strong id="distance-total">0 <small>km</small></strong></div>
+          <div class="stat-card"><span>ALTITUD MÁX.</span><strong id="altitude-max">0 <small>m</small></strong></div>
+        </section>
+
+        <section class="routes-section">
+          <div class="section-heading">
+            <div><p class="eyebrow">TU HISTORIAL</p><h2>Rutas</h2></div>
+            <div class="section-actions"><button id="annual-summary-button" class="text-button" type="button" hidden>Resumen anual</button><button id="clear-routes" class="text-button" type="button" hidden>Vaciar</button></div>
+          </div>
+          <div class="route-filters">
+            <input id="route-search" type="search" placeholder="Buscar vuelo o aeropuerto" aria-label="Buscar vuelo o aeropuerto" />
+            <select id="year-filter" aria-label="Filtrar rutas por año"><option value="all">Todos los años</option></select>
+          </div>
+          <div id="empty-state" class="empty-state">
+            <span class="empty-icon" aria-hidden="true">⌁</span>
+            <b>Aún no hay rutas</b>
+            <span>Arrastra aquí tus KML o pulsa «Añadir archivos».</span>
+          </div>
+          <div id="no-results" class="empty-state" hidden>No hay rutas que coincidan con la búsqueda.</div>
+          <ul id="route-list" class="route-list" aria-live="polite"></ul>
+          <section id="route-details" class="route-details" aria-live="polite" hidden>
+            <div class="detail-heading"><div><p class="eyebrow">DETALLE DEL VUELO</p><h3 id="detail-title"></h3></div><button id="close-details" class="text-button" type="button" aria-label="Cerrar detalle">×</button></div>
+            <div class="detail-stats"><span>Distancia <b id="detail-distance">—</b></span><span>Altitud máxima <b id="detail-altitude">—</b></span><span>Velocidad media <b id="detail-speed">—</b></span></div>
+            <svg id="altitude-profile" class="altitude-profile" viewBox="0 0 360 100" role="img" aria-label="Perfil de altitud del vuelo"></svg>
+            <div class="profile-axis"><span>Inicio</span><span>Final</span></div>
+            <div class="replay-controls">
+              <button id="replay-button" class="small-button" type="button">▶ Reproducir</button>
+              <input id="replay-range" type="range" min="0" max="1000" value="0" aria-label="Posición de reproducción" />
+              <span id="replay-time">00:00</span>
+            </div>
+          </section>
+        </section>
+
+        <footer class="sidebar-footer">
+          <a href="https://insigniavfr.enaire.es/" target="_blank" rel="noreferrer">Carta VFR de España <span aria-hidden="true">↗</span></a>
+          <a href="https://aip.enaire.es/AIP/CartasInsigniaImpresas-es.html" target="_blank" rel="noreferrer">Cartas VFR500 oficiales <span aria-hidden="true">↗</span></a>
+          <span>Los datos de vuelo no salen de tu navegador.</span>
+        </footer>
+      </aside>
+
+      <section class="map-workspace" aria-label="Mapa de vuelos">
+        <div id="map" role="application" aria-label="Mapa interactivo de rutas"></div>
+        <div class="map-toolbar">
+          <div class="map-title"><span class="live-dot"></span><span id="map-status">MAPA DE VUELOS</span></div>
+          <div class="map-actions">
+            <button id="satellite-toggle" class="map-button is-active" type="button" aria-pressed="true"><span aria-hidden="true">▧</span> Satélite</button>
+            <button id="terrain-toggle" class="map-button is-active" type="button" aria-pressed="true"><span aria-hidden="true">◇</span> 3D</button>
+            <button id="vfr-toggle" class="map-button" type="button" aria-pressed="false" title="Mostrar cartografía aeronáutica de España"><span aria-hidden="true">✈</span> Carta VFR</button>
+            <button id="north-toggle" class="map-button" type="button" title="Alinear al Norte"><span aria-hidden="true">⌖</span> Alinear al Norte</button>
+            <div class="segmented" role="group" aria-label="Colorear rutas por">
+              <button id="altitude-mode" class="selected" type="button" aria-pressed="true">Altitud</button>
+              <button id="speed-mode" type="button" aria-pressed="false">Velocidad</button>
+            </div>
+          </div>
+        </div>
+        <div class="map-legend" aria-live="polite">
+          <b id="legend-title">ALTITUD</b>
+          <div class="gradient-bar"></div>
+          <div class="legend-labels"><span id="legend-low">0 m</span><span id="legend-high">12 000 m</span></div>
+        </div>
+        <button id="reset-view" class="map-fab" type="button" title="Restablecer vista" aria-label="Restablecer vista">⟳</button>
+        <div id="drop-hint" class="drop-hint" hidden>Suelta tus archivos KML para añadir las rutas</div>
+        <div id="toast" class="toast" role="status" aria-live="polite" hidden></div>
+        <div class="map-attribution">Mapa © CARTO · Imágenes © Esri · Elevación © AWS · Cartografía © ENAIRE</div>
+      </section>
+    </main>
+    <dialog id="year-summary" class="summary-dialog">
+      <form method="dialog"><button class="dialog-close" type="submit" aria-label="Cerrar resumen">×</button></form>
+      <p class="eyebrow">ALTURA · RESUMEN ANUAL</p>
+      <h2 id="summary-title">Tu año en el aire</h2>
+      <div class="summary-stats"><div><strong id="summary-flights">0</strong><span>vuelos</span></div><div><strong id="summary-distance">0 km</strong><span>distancia</span></div><div><strong id="summary-altitude">0 m</strong><span>altitud máxima</span></div></div>
+      <div id="month-bars" class="month-bars" aria-label="Vuelos por mes"></div>
+      <p id="summary-highlight" class="summary-highlight"></p>
+    </dialog>
+    <script type="module" src="./app.js"></script>
+  </body>
+</html>
+

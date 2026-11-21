@@ -1,9 +1,15 @@
-Altura includes code and design derived from Flown.
+Historical revisions of Altura in this repository and its backup branches
+included code and design derived from Flown.
 
 Flown
 Copyright 2025 Sascha Grunert
 Licensed under the Apache License, Version 2.0.
 
-The application template has been modified for the Altura name and Spanish
-interface. Other changes and their notices are recorded in the affected files.
-The full license text is in LICENSE.
+The application template in those historical revisions was modified for the
+Altura name and Spanish interface. Other changes and their notices were
+recorded in the affected files. The full license text is in LICENSE.
+
+The current implementation in altura-next/ is a separate implementation for
+Altura and does not import the previous frontend. The historical materials
+remain in earlier Git revisions and backup branches.
+
