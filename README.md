@@ -24,11 +24,12 @@ Abre `http://localhost:8000` y añade archivos `.kml` o `.kmz`.
 - Exportación del mapa como imagen, exportación de trazas a KML y descarga de una tarjeta Wrapped.
 - Interfaz adaptable a móvil y escritorio.
 - Vistas 3D de relieve y globo mediante MapLibre.
+- Recorrido guiado por las zonas donde más se concentran las trazas.
 
 ## Datos y servicios externos
 
-Las rutas y estadísticas viven solo en la memoria de la pestaña y desaparecen al cerrarla. Los mosaicos de mapa se descargan de OpenStreetMap con su atribución visible. La vista 3D también solicita mosaicos de elevación públicos a AWS. La búsqueda de lugares envía el texto de búsqueda a Photon, que usa datos de OpenStreetMap. Las librerías del mapa, archivos comprimidos y fuentes tipográficas se sirven desde CDN. Ninguno de estos servicios recibe los archivos KML/KMZ.
+Las rutas procesadas se guardan en IndexedDB local y permanecen en este navegador hasta que las borres desde la bitácora. Los mosaicos de mapa se descargan de OpenStreetMap con su atribución visible. La vista 3D también solicita mosaicos de elevación públicos a AWS. La búsqueda de lugares envía el texto de búsqueda a Photon, que usa datos de OpenStreetMap. Las librerías del mapa, archivos comprimidos y fuentes tipográficas se sirven desde CDN. Ninguno de estos servicios recibe los archivos KML/KMZ.
 
 ## En desarrollo
 
-Las vistas 3D y globo ya están disponibles; el relieve representa el terreno y las rutas siguen elevadas por su altitud en el perfil, no como geometría tridimensional sobre el terreno. Las cartas aeronáuticas, la base de datos de aeropuertos con códigos ICAO, los datos de aterrizajes y la visita guiada por puntos calientes aún están en desarrollo. La lista de aeropuertos de esta versión agrupa aproximando los extremos de las rutas.
+Las vistas 3D y globo ya están disponibles; el relieve representa el terreno y las rutas siguen elevadas por su altitud en el perfil, no como geometría tridimensional sobre el terreno. Las cartas aeronáuticas, la base de datos de aeropuertos con códigos ICAO y los datos de aterrizajes aún están en desarrollo. La lista de aeropuertos de esta versión agrupa aproximando los extremos de las rutas.

@@ -17,6 +17,8 @@
   <script defer src="https://cdn.jsdelivr.net/npm/fflate@0.8.2/umd/index.js"></script>
   <script defer src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
   <script defer src="app.js"></script>
+  <script defer src="storage.js"></script>
+  <script defer src="hotspots.js"></script>
   <script type="module" src="globe.js"></script>
 </head>
 <body>
@@ -51,7 +53,7 @@
       <div id="map" role="application" aria-label="Mapa interactivo de vuelos"></div>
       <div id="map3d" class="maplibre-overlay" aria-label="Mapa de vuelos en relieve 3D"></div>
       <div class="map-toolbar map-toolbar-left"><button class="map-tool active" data-action="select" title="Seleccionar vuelos">↖</button><button class="map-tool" data-action="measure" title="Medir una ruta">⌁</button><button class="map-tool" data-action="section" title="Trazar perfil de sección">⌗</button><span class="tool-divider"></span><button class="map-tool" id="fullscreen-button" title="Pantalla completa">⛶</button></div>
-      <div class="map-toolbar map-toolbar-right"><button class="map-tool text-tool" id="map-mode-button" title="Cambiar entre mapa 2D, relieve 3D y globo">◉ <span>2D</span></button><button class="map-tool text-tool" id="map-style-button" title="Cambiar estilo del mapa">◐ <span>Mapa</span></button><button class="map-tool text-tool" id="share-button" title="Copiar enlace de esta vista">↗ <span>Compartir vista</span></button><button class="map-tool text-tool" id="export-button" title="Exportar imagen del mapa">⇩ <span>Exportar</span></button></div>
+      <div class="map-toolbar map-toolbar-right"><button class="map-tool text-tool" id="map-mode-button" title="Cambiar entre mapa 2D, relieve 3D y globo">◉ <span>2D</span></button><button class="map-tool text-tool" id="map-style-button" title="Cambiar estilo del mapa">◐ <span>Mapa</span></button><button class="map-tool text-tool" id="hotspot-button" title="Recorrer zonas con más actividad">✦ <span>Tour</span></button><button class="map-tool text-tool" id="share-button" title="Copiar enlace de esta vista">↗ <span>Compartir vista</span></button><button class="map-tool text-tool" id="export-button" title="Exportar imagen del mapa">⇩ <span>Exportar</span></button></div>
       <div class="map-legend" id="map-legend"><span class="legend-title">ALTITUD</span><div class="legend-gradient altitude-gradient"></div><div class="legend-values"><span id="legend-low">0 m</span><span id="legend-high">— m</span></div></div>
       <div class="map-badge"><span>ALTURA</span><b>ROUTE LOG</b><small id="map-point-count">SIN DATOS</small></div>
       <div class="map-tools-mobile"><button id="mobile-sidebar">☰ VUELOS</button><button id="mobile-layers">◉ CAPAS</button></div>
@@ -69,7 +71,7 @@
 
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <div class="modal-backdrop" id="modal-backdrop" hidden><section class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title"><button class="modal-close" id="modal-close" aria-label="Cerrar">×</button><div id="modal-content"></div></section></div>
-  <dialog class="import-dialog" id="import-dialog"><form method="dialog"><button class="modal-close" aria-label="Cerrar">×</button></form><div class="eyebrow"><i></i> ARCHIVOS LOCALES</div><h2>Añade tus <em>vuelos.</em></h2><p>Tus trazas se procesan en este navegador y se quedan en tu dispositivo.</p><label class="dropzone" id="dropzone"><span class="upload-icon">↑</span><b>Suelta KML o KMZ aquí</b><small>o toca para buscar archivos · admite varios</small><input type="file" id="drop-input" accept=".kml,.kmz,application/vnd.google-earth.kml+xml,application/vnd.google-earth.kmz" multiple hidden /></label><div class="import-progress" id="import-progress"></div><div class="import-note">Este prototipo mantiene los datos en memoria hasta que cierres la página. Los mapas, los modelos de elevación del relieve y las búsquedas de lugares se solicitan a sus proveedores.</div></dialog>
+  <dialog class="import-dialog" id="import-dialog"><form method="dialog"><button class="modal-close" aria-label="Cerrar">×</button></form><div class="eyebrow"><i></i> ARCHIVOS LOCALES</div><h2>Añade tus <em>vuelos.</em></h2><p>Tus trazas se procesan en este navegador y se quedan en tu dispositivo.</p><label class="dropzone" id="dropzone"><span class="upload-icon">↑</span><b>Suelta KML o KMZ aquí</b><small>o toca para buscar archivos · admite varios</small><input type="file" id="drop-input" accept=".kml,.kmz,application/vnd.google-earth.kml+xml,application/vnd.google-earth.kmz" multiple hidden /></label><div class="import-progress" id="import-progress"></div><div class="import-note">Tus trazas se guardan solo en este navegador y puedes borrarlas desde la bitácora. Los mapas, los modelos de elevación del relieve y las búsquedas de lugares se solicitan a sus proveedores.</div></dialog>
 
   <template id="flight-row-template"><button class="flight-row"><span class="flight-color"></span><span class="flight-row-main"><b></b><small></small></span><span class="flight-row-stats"><b></b><small></small></span><span class="flight-chevron">›</span></button></template>
 </body>

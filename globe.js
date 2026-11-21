@@ -164,6 +164,8 @@ function setMode(next) {
     modeButton.title = "Volver al mapa 2D";
   }
 }
+window.alturaSetMapMode = setMode;
+window.alturaMapMode = () => mode;
 
 function applyMode() {
   if (!map3d?.isStyleLoaded()) return;
