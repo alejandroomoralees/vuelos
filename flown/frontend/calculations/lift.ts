@@ -14,13 +14,14 @@
  * the map at both ends. Off the globe the map draws the relief under the
  * flights, and the ribbons stand on it.
  *
- * The heights are exaggerated, and the relief as much, more the further
- * out the map is: at true scale a circuit is a hair above the ground at
- * any zoom where the airfield is more than a dot.
+ * Flight heights and terrain relief use a 1:1 vertical scale at every
+ * zoom. A flight at 1,000 ft above ground is drawn 1,000 ft above the
+ * sampled terrain; at distant zooms this naturally appears close to the
+ * surface because the map does not inflate vertical distances.
  *
  * This module is the policy: from which zoom the flights are drawn flat
  * and the relief level a zoom is drawn for (liftZoom.ts, which comes with
- * the app, re-exported here), how much each level exaggerates, and how
+ * the app, re-exported here), the shared vertical scale, and how
  * high a point is drawn on the screen. The curve through the
  * fixes is smoothing.ts, the ground of a flight groundProfile.ts, the
  * ribbons cut along the curve ribbons.ts, and the paint that lifts them
@@ -81,25 +82,13 @@ export function groundKey(step: number): `o${number}` {
 }
 
 /**
- * How much the relief and the heights of the flights are exaggerated, by
- * relief level from 0 on, the last for every level beyond. Further out
- * than 10x the Alps stand as a wall across the map, and a level flight
- * saws up and down over the ridges: the ground it is measured against
- * follows the relief the map draws only to within about 100 m there (see
- * groundProfileFt), which the exaggeration multiplies, and at 10x that is
- * under a pixel. The flights are lifted as much, so the lift ramps down
- * from there to twice their height from level 10 in.
- *
- * The ramp down starts at level 8. Over a region (zoom 7 to 9, tilted 45
- * to 60 degrees) a light aircraft's 1,000 to 3,000 ft at 7, 4 and 2 times
- * was a few pixels next to the kilometres between its fields, and the
- * cloud of the 3D view looked like the flat heatmap tilted; at 10, 7 and
- * 4 times the circuits and the cruise stand apart. The ground at level 8
- * follows the relief the map draws over the Alps to within about 30 m,
- * which at 7x is a pixel or two there, and far less over flat land.
+ * Shared vertical scale for terrain and flight altitude, by relief level
+ * from 0 on (the last value is used for every later level). Keeping both
+ * values at 1 preserves the source data's physical altitude in the 3D
+ * scene and prevents flights from floating above their real position.
  */
 export const EXAGGERATION_BY_LEVEL: readonly number[] = [
-  10, 10, 10, 10, 10, 10, 10, 10, 7, 4, 2,
+  1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1,
 ];
 
 /**
