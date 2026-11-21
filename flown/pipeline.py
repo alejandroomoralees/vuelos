@@ -712,8 +712,8 @@ def _map_extent(
 
     Only exported paths count: an excluded path would widen the map and give
     away where it was. ``exportable`` tells for every path whether it is
-    exported (``is_exportable_path`` when the caller passes nothing). Raises
-    when there is nothing to export.
+    exported (``is_exportable_path`` when the caller passes nothing). A
+    blank starter site opens over Spain and western Europe.
     """
     if exportable is None:
         exportable = [is_exportable_path(path) for path in all_path_groups]
@@ -724,6 +724,10 @@ def _map_extent(
         for point in path
     )
     if extent is None:
+        if not all_path_groups:
+            # A blank starter site has no paths to fit. Open it over Spain
+            # and western Europe until the visitor adds flights.
+            return CoordinateExtent(35.0, 55.0, -15.0, 35.0)
         raise InvalidInputError("No flight paths with a determinable year to export")
     return extent
 
@@ -1232,6 +1236,7 @@ def build_site(
     site_url: str | None = None,
     private: bool = False,
     trim_ends: float = 0,
+    allow_empty: bool = False,
 ) -> ExportResult:
     """Generate the site: the page, its assets and the data files.
 
@@ -1260,6 +1265,8 @@ def build_site(
     that many metres of where the rest starts and ends (see
     ``geometry.trim_path_ends``): the taxiing, and the spot the aircraft is
     parked on.
+    ``allow_empty`` permits an empty KML list for a blank starter site. It
+    does not skip validation when files are supplied.
     """
     if trim_ends < 0:
         raise InvalidInputError(f"trim_ends must not be negative, not {trim_ends}")
@@ -1276,15 +1283,25 @@ def build_site(
     warn_about_a_stale_bundle()
 
     # Stage 1: Validate and parse
-    valid_files = _validated_files(kml_files)
+    if kml_files:
+        valid_files = _validated_files(kml_files)
+    elif allow_empty:
+        valid_files = []
+    else:
+        raise InvalidInputError("No valid KML files to process!")
 
     logger.info("Parsing %d KML file(s)...", len(valid_files))
 
     try:
-        try:
-            all_path_groups, all_path_metadata, landings = _parse_kml_files(valid_files)
-        except (ValueError, OSError) as e:
-            raise ExportError(str(e)) from e
+        if valid_files:
+            try:
+                all_path_groups, all_path_metadata, landings = _parse_kml_files(
+                    valid_files
+                )
+            except (ValueError, OSError) as e:
+                raise ExportError(str(e)) from e
+        else:
+            all_path_groups, all_path_metadata, landings = [], [], []
 
         # Stage 2: Export the data, the page and the assets
         aircraft_data = merge_aircraft_data(aircraft_files) if aircraft_files else None

@@ -343,6 +343,7 @@ def _generate(
     private: bool = False,
     quiet: bool = False,
     trim_ends: float = 0,
+    allow_empty: bool = False,
 ) -> None:
     """Generate the site into ``output_dir``.
 
@@ -357,6 +358,8 @@ def _generate(
     ``trim_ends`` leaves out the ground of every flight before its takeoff
     and after its landing, and its points within that many metres of where
     the rest starts and ends (see ``geometry.trim_path_ends``).
+    ``allow_empty`` creates a blank starter site when the inputs contain no
+    flights, as for a public app that accepts local uploads.
 
     The generated site never carries a flight date finer than the year,
     whatever the inputs hold: the exported paths keep their year, their
@@ -380,7 +383,7 @@ def _generate(
 
     kml_files, roots = _collect_kml_files(paths)
 
-    if not kml_files:
+    if not kml_files and not allow_empty:
         raise InvalidInputError("No KML files specified or found!")
 
     if not quiet:
@@ -419,6 +422,7 @@ def _generate(
         site_url=site_url or "",
         private=private,
         trim_ends=trim_ends,
+        allow_empty=allow_empty,
     )
     if quiet:
         # The line the quiet run is for: where the site went
@@ -526,6 +530,11 @@ a refused output directory, 1 when the build failed, 130 when interrupted.
         metavar="DIR",
         default="docs",
         help="output directory (default: docs)",
+    )
+    output.add_argument(
+        "--allow-empty",
+        action="store_true",
+        help="generate a blank starter site when the input directory has no flights",
     )
     output.add_argument(
         "--force",
@@ -688,6 +697,7 @@ def main() -> None:
             args.private,
             args.quiet and not args.debug,
             args.trim_ends,
+            args.allow_empty,
         )
     except KeyboardInterrupt:
         _fatal("Interrupted", EXIT_INTERRUPTED)

@@ -29,7 +29,7 @@ jobs:
         id: pages
         uses: actions/configure-pages@45bfe0192ca1faeb007ade9deae92b16b8254a0d # v6.0.0
       - name: Generate site
-        run: uv run --no-sync python -m flown data --output-dir site
+        run: uv run --no-sync python -m flown data --output-dir site --allow-empty
         env:
           FLOWN_SITE_URL: ${{ steps.pages.outputs.base_url }}
           FLOWN_STABLE_MTIMES: "1"
