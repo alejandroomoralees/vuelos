@@ -2,10 +2,10 @@
 <html lang="es">
 <head>
   <meta charset="utf-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <meta name="theme-color" content="#0a1018" />
-  <meta name="description" content="Tu año en el aire: un mapa privado de todos tus vuelos." />
-  <title>Altura — Tu año en el aire</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="theme-color" content="#141414" />
+  <meta name="description" content="Un mapa de tus vuelos, tus rutas y tus viajes." />
+  <title>Altura — Mapa de vuelos</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
   <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
@@ -20,60 +20,116 @@
   <script defer src="storage.js"></script>
   <script defer src="airport-data.js"></script>
   <script defer src="hotspots.js"></script>
+  <script defer src="ui.js"></script>
   <script type="module" src="globe.js"></script>
 </head>
 <body>
-  <header class="topbar">
-    <a class="brand" href="#" aria-label="Altura"><span class="brand-mark">A</span><span>altura<span class="brand-dot">.</span></span></a>
-    <div class="top-search"><span class="search-glyph">⌕</span><input id="search-input" type="search" autocomplete="off" placeholder="Busca un lugar o aeropuerto…" aria-label="Buscar lugar o aeropuerto" /><kbd>/</kbd><div class="search-results" id="search-results"></div></div>
-    <div class="top-actions"><label class="season-select"><span>TEMPORADA</span><select id="year-filter"><option value="all">Todos los años</option></select></label><button class="icon-action" id="wrapped-button" title="Tu resumen Wrapped">✦ <span>Wrapped</span></button><button class="button button-small" id="import-button">Añadir vuelos <span>＋</span></button></div>
-    <input type="file" id="file-input" accept=".kml,.kmz,application/vnd.google-earth.kml+xml,application/vnd.google-earth.kmz,application/xml,text/xml" multiple hidden />
-  </header>
+  <header class="visually-hidden"><h1>Altura · Mapa de vuelos</h1></header>
 
-  <main class="workspace">
-    <aside class="sidebar" id="sidebar">
-      <div class="side-head"><div><div class="eyebrow"><i></i> TU BITÁCORA</div><h1>Todos los <em>vuelos.</em></h1></div><button class="icon-button mobile-close" id="close-sidebar" aria-label="Cerrar panel">×</button></div>
-      <div class="summary-mini"><span class="summary-count" id="flight-count">0</span><span>VUELOS REGISTRADOS</span><span class="summary-season" id="season-label">SIN TEMPORADA</span></div>
-      <div class="filter-row"><label><span>AÑO</span><select id="side-year"><option value="all">Todos</option></select></label><label><span>AERONAVE</span><select id="aircraft-filter"><option value="all">Todas</option></select></label></div>
-      <section class="layer-controls">
-        <div class="side-section-title"><span>CAPAS DEL MAPA</span><button class="small-link" id="reset-view">Restablecer</button></div>
-        <label class="layer-option"><span class="layer-icon heat-icon">◉</span><span><b>Tiempo en ruta</b><small>Mapa de calor</small></span><input type="radio" name="layer" value="heat" /><i class="radio-ui"></i></label>
-        <label class="layer-option"><span class="layer-icon altitude-icon">⌁</span><span><b>Altitud</b><small>De bajo a alto</small></span><input type="radio" name="layer" value="altitude" checked /><i class="radio-ui"></i></label>
-        <label class="layer-option"><span class="layer-icon speed-icon">↗</span><span><b>Velocidad</b><small>Ritmo sobre el suelo</small></span><input type="radio" name="layer" value="speed" /><i class="radio-ui"></i></label>
-        <div class="toggle-line"><span class="layer-icon airport-icon">⌖</span><span><b>Aeropuertos</b><small>Escalas y visitas</small></span><label class="switch"><input type="checkbox" id="airports-toggle" checked /><i></i></label></div>
-      </section>
-      <section class="flight-list-section">
-        <div class="side-section-title"><span>VUELOS</span><button class="small-link" id="sort-flights">FECHA ↓</button></div>
-        <div class="flight-search"><span>⌕</span><input id="flight-search" type="search" placeholder="Filtrar vuelos" aria-label="Filtrar vuelos" /><kbd>⌘K</kbd></div>
-        <div class="flight-list" id="flight-list"><div class="empty-sidebar"><span>✈</span><p>Aún no hay vuelos.<br /><button class="text-button" id="empty-import">Importa archivos KML o KMZ</button></p></div></div>
-      </section>
-      <div class="sidebar-bottom"><span class="privacy-dot"></span> ARCHIVOS PRIVADOS EN ESTE DISPOSITIVO <button id="clear-flights" title="Quitar todos los vuelos">BORRAR</button></div>
-    </aside>
-
-    <section class="map-workspace">
-      <div id="map" role="application" aria-label="Mapa interactivo de vuelos"></div>
-      <div id="map3d" class="maplibre-overlay" aria-label="Mapa de vuelos en relieve y satélite 3D"></div>
-      <div class="map-toolbar map-toolbar-left"><button class="map-tool active" data-action="select" title="Seleccionar vuelos">↖</button><button class="map-tool" data-action="measure" title="Medir una ruta">⌁</button><button class="map-tool" data-action="section" title="Trazar perfil de sección">⌗</button><span class="tool-divider"></span><button class="map-tool" id="fullscreen-button" title="Pantalla completa">⛶</button></div>
-      <div class="map-toolbar map-toolbar-right"><button class="map-tool text-tool" id="map-mode-button" title="Cambiar entre mapa 2D, relieve 3D y globo">◉ <span>2D</span></button><button class="map-tool text-tool" id="map-style-button" title="Cambiar a imagen satélite">◐ <span>Mapa</span></button><button class="map-tool text-tool" id="hotspot-button" title="Recorrer zonas con más actividad">✦ <span>Tour</span></button><button class="map-tool text-tool" id="share-button" title="Copiar enlace de esta vista">↗ <span>Compartir vista</span></button><button class="map-tool text-tool" id="export-button" title="Exportar imagen del mapa">⇩ <span>Exportar</span></button></div>
-      <div class="map-legend" id="map-legend"><span class="legend-title">ALTITUD</span><div class="legend-gradient altitude-gradient"></div><div class="legend-values"><span id="legend-low">0 m</span><span id="legend-high">— m</span></div></div>
-      <div class="map-badge"><span>ALTURA</span><b>ROUTE LOG</b><small id="map-point-count">SIN DATOS</small></div>
-      <div class="map-tools-mobile"><button id="mobile-sidebar">☰ VUELOS</button><button id="mobile-layers">◉ CAPAS</button></div>
-      <section class="bottom-dock" id="bottom-dock">
-        <div class="dock-top"><div class="dock-tabs"><button class="dock-tab active" data-tab="overview">Resumen</button><button class="dock-tab" data-tab="flights">Vuelos</button><button class="dock-tab" data-tab="airports">Aeropuertos</button><button class="dock-tab" data-tab="profile">Perfil</button></div><button class="dock-expand" id="dock-expand" aria-label="Expandir resumen">⌃</button></div>
-        <div class="dock-content" id="dock-content">
-          <div class="dock-metrics"><article><span>DISTANCIA TOTAL</span><strong><b id="stat-distance">—</b><small> km</small></strong><i>⌁</i></article><article><span>TIEMPO EN EL AIRE</span><strong id="stat-time">—</strong><i>◷</i></article><article><span>ALTITUD MÁXIMA</span><strong><b id="stat-altitude">—</b><small> m</small></strong><i>⌃</i></article><article><span>AEROPUERTOS</span><strong id="stat-airports">—</strong><i>⌖</i></article><article><span>LLEGADAS ESTIMADAS</span><strong id="stat-landings">—</strong><i>↘</i></article></div>
-          <div class="dock-chart-wrap"><div class="dock-chart-label"><b id="chart-title">Vuelos por temporada</b><span id="chart-subtitle">IMPORTA TUS REGISTROS PARA VER TENDENCIAS</span></div><canvas id="year-chart" height="70"></canvas></div>
-          <div class="dock-table" id="dock-table"></div>
-        </div>
-      </section>
-      <section class="replay-bar" id="replay-bar"><button class="replay-play" id="replay-play" title="Reproducir vuelos">▶</button><button class="replay-all" id="replay-all">Reproducir todo</button><div class="replay-track"><span class="replay-current" id="replay-current">LISTA PARA DESPEGAR</span><input type="range" id="replay-range" min="0" max="1000" value="0" /><div class="replay-times"><span>INICIO</span><span id="replay-clock">00:00</span><span>FINAL</span></div></div><button class="replay-speed" id="replay-speed">1×</button></section>
+  <aside class="sidebar stats-rail" id="sidebar" aria-labelledby="stats-title" hidden>
+    <div class="stats-rail-header">
+      <div class="stats-title-wrap">
+        <span class="stats-symbol" aria-hidden="true">▥</span>
+        <h2 class="stats-title" id="stats-title">Estadísticas</h2>
+      </div>
+      <button class="icon-button" id="close-sidebar" aria-label="Cerrar estadísticas" title="Cerrar">×</button>
+    </div>
+    <div class="summary-mini">
+      <span class="summary-count" id="flight-count">0</span>
+      <span class="summary-caption">vuelos registrados</span>
+      <span class="summary-season" id="season-label">Sin temporada</span>
+    </div>
+    <div class="dock-tabs" role="tablist" aria-label="Estadísticas y vuelos">
+      <button class="dock-tab active" data-tab="overview" role="tab" aria-selected="true">Estadísticas</button>
+      <button class="dock-tab" data-tab="flights" role="tab" aria-selected="false">Vuelos</button>
+      <button class="dock-tab" data-tab="airports" role="tab" aria-selected="false">Aeropuertos</button>
+      <button class="dock-tab" data-tab="profile" role="tab" aria-selected="false">Perfil</button>
+    </div>
+    <div id="bottom-dock">
+    <div class="dock-content" id="dock-content">
+      <div class="dock-metrics">
+        <article><span>Distancia total</span><strong><b id="stat-distance">—</b><small> km</small></strong><i aria-hidden="true">↗</i></article>
+        <article><span>Tiempo en el aire</span><strong id="stat-time">—</strong><i aria-hidden="true">◷</i></article>
+        <article><span>Altitud máxima</span><strong><b id="stat-altitude">—</b><small> m</small></strong><i aria-hidden="true">⌃</i></article>
+        <article><span>Aeropuertos</span><strong id="stat-airports">—</strong><i aria-hidden="true">⌖</i></article>
+        <article><span>Llegadas</span><strong id="stat-landings">—</strong><i aria-hidden="true">↘</i></article>
+      </div>
+      <div class="dock-chart-wrap">
+        <div class="dock-chart-label"><b id="chart-title">Vuelos por año</b><span id="chart-subtitle">Añade vuelos para ver tendencias</span></div>
+        <canvas id="year-chart" height="70"></canvas>
+      </div>
+      <div class="dock-table" id="dock-table"></div>
+    </div>
+    </div>
+    <section class="flight-list-section" aria-labelledby="flight-list-title">
+      <div class="side-section-title"><span id="flight-list-title">Vuelos</span><button class="small-link" id="sort-flights">Fecha ↓</button></div>
+      <div class="flight-search"><span aria-hidden="true">⌕</span><input id="flight-search" type="search" placeholder="Filtrar vuelos" aria-label="Filtrar vuelos" /><kbd>/</kbd></div>
+      <div class="flight-list" id="flight-list"><div class="empty-sidebar"><span aria-hidden="true">✈</span><p>Aún no hay vuelos.<br /><button class="text-button" id="empty-import">Añade archivos KML o KMZ</button></p></div></div>
+      <div class="sidebar-bottom"><span class="privacy-dot"></span> Tus archivos permanecen en este dispositivo <button id="clear-flights" title="Quitar todos los vuelos">Borrar</button></div>
     </section>
+    <button class="dock-expand" id="dock-expand" aria-label="Ampliar panel">⌃</button>
+  </aside>
+
+  <main class="map-workspace">
+    <div id="map" role="application" aria-label="Mapa interactivo de vuelos"></div>
+    <div id="map3d" class="maplibre-overlay" aria-label="Mapa de vuelos en relieve 3D y vista satélite"></div>
+    <div class="map-legend" id="map-legend"><span class="legend-title">Altitud</span><div class="legend-gradient altitude-gradient"></div><div class="legend-values"><span id="legend-low">0 m</span><span id="legend-high">— m</span></div></div>
+    <div class="map-badge"><span>ALTURA</span><b>REGISTRO DE VUELOS</b><small id="map-point-count">Sin datos</small></div>
+    <div class="map-tools-mobile"><button id="mobile-sidebar" aria-controls="sidebar" aria-expanded="false">▤ Estadísticas</button><button id="mobile-layers" aria-controls="right-buttons" aria-expanded="false">◉ Capas</button></div>
+    <section class="replay-bar" id="replay-bar" aria-label="Reproducción de vuelos"><button class="replay-play" id="replay-play" title="Reproducir vuelos">▶</button><button class="replay-all" id="replay-all">Reproducir todo</button><div class="replay-track"><span class="replay-current" id="replay-current">Lista para despegar</span><input type="range" id="replay-range" min="0" max="1000" value="0" /><div class="replay-times"><span>Inicio</span><span id="replay-clock">00:00</span><span>Final</span></div></div><button class="replay-speed" id="replay-speed">1×</button></section>
   </main>
 
+  <nav class="control-column is-at-end" id="left-buttons" aria-label="Vista y compartir">
+    <div class="control-group search-group" role="group" aria-labelledby="search-group-title">
+      <h2 class="control-group-title" id="search-group-title">Buscar</h2>
+      <div class="control-row search-row"><div class="top-search"><span class="search-glyph" aria-hidden="true">⌕</span><input id="search-input" type="search" autocomplete="off" placeholder="Lugar o aeropuerto" aria-label="Buscar lugar o aeropuerto" /><kbd>/</kbd><div class="search-results" id="search-results"></div></div></div>
+    </div>
+    <div class="control-group" role="group" aria-labelledby="view-group-title">
+      <h2 class="control-group-title" id="view-group-title">Vista</h2>
+      <div class="control-row"><button class="btn-surface control-btn" id="import-button" title="Añadir tus archivos de vuelo"><span class="control-icon" aria-hidden="true">↑</span><span class="control-label">Añadir vuelos</span></button></div>
+      <div class="control-row"><button class="btn-surface control-btn" id="stats-button" aria-controls="sidebar" aria-expanded="false"><span class="control-icon" aria-hidden="true">▥</span><span class="control-label">Estadísticas</span></button></div>
+      <div class="control-row"><button class="btn-surface control-btn" id="wrapped-button" title="Tu año de vuelos en resumen"><span class="control-icon" aria-hidden="true">✦</span><span class="control-label">Resumen anual</span></button></div>
+      <div class="control-sep" role="separator"></div>
+      <div class="control-row"><button class="btn-surface control-btn map-tool active" data-action="select" title="Seleccionar vuelos"><span class="control-icon" aria-hidden="true">↖</span><span class="control-label">Seleccionar</span></button></div>
+      <div class="control-row"><button class="btn-surface control-btn map-tool" data-action="measure" title="Medir una ruta"><span class="control-icon" aria-hidden="true">⌁</span><span class="control-label">Medir distancia</span></button></div>
+      <div class="control-row"><button class="btn-surface control-btn map-tool" data-action="section" title="Trazar un perfil de altitud"><span class="control-icon" aria-hidden="true">⌗</span><span class="control-label">Perfil de sección</span></button></div>
+      <div class="control-row"><button class="btn-surface control-btn" id="hotspot-button" title="Visitar las zonas con más actividad"><span class="control-icon" aria-hidden="true">✦</span><span class="control-label">Tour</span></button></div>
+    </div>
+    <div class="control-group" role="group" aria-labelledby="share-group-title">
+      <h2 class="control-group-title" id="share-group-title">Compartir</h2>
+      <div class="control-row"><button class="btn-surface control-btn" id="share-button" title="Copiar enlace de esta vista"><span class="control-icon" aria-hidden="true">↗</span><span class="control-label">Copiar enlace</span></button></div>
+      <div class="control-row"><button class="btn-surface control-btn" id="export-button" title="Exportar una imagen del mapa"><span class="control-icon" aria-hidden="true">⇩</span><span class="control-label">Exportar imagen</span></button></div>
+    </div>
+  </nav>
+
+  <nav class="control-column is-at-end" id="right-buttons" aria-label="Filtros, capas y mapa">
+    <div class="control-group" role="group" aria-labelledby="filter-group-title">
+      <h2 class="control-group-title" id="filter-group-title">Filtros</h2>
+      <div class="control-row filter-row"><span class="control-icon" aria-hidden="true">▦</span><label class="filter-dropdown"><span class="visually-hidden">Filtrar por año</span><select id="year-filter" aria-label="Filtrar vuelos por año"><option value="all">Todos los años</option></select></label></div>
+      <div class="control-row filter-row"><span class="control-icon" aria-hidden="true">✈</span><label class="filter-dropdown"><span class="visually-hidden">Filtrar por aeronave</span><select id="aircraft-filter" aria-label="Filtrar vuelos por aeronave"><option value="all">Todas las aeronaves</option></select></label></div>
+      <select id="side-year" class="visually-hidden" aria-hidden="true" tabindex="-1"><option value="all">Todos</option></select>
+    </div>
+    <section class="control-group layer-controls" role="group" aria-labelledby="layers-group-title">
+      <h2 class="control-group-title" id="layers-group-title">Capas</h2>
+      <label class="control-row layer-option"><input type="radio" name="layer" value="heat" /><span class="control-icon heat-icon" aria-hidden="true">◉</span><span class="control-label">Mapa de calor</span></label>
+      <label class="control-row layer-option active"><input type="radio" name="layer" value="altitude" checked /><span class="control-icon altitude-icon" aria-hidden="true">⌁</span><span class="control-label">Altitud</span><span class="ramp-chip altitude-gradient" aria-hidden="true"></span></label>
+      <label class="control-row layer-option"><input type="radio" name="layer" value="speed" /><span class="control-icon speed-icon" aria-hidden="true">↗</span><span class="control-label">Velocidad</span><span class="ramp-chip speed-gradient" aria-hidden="true"></span></label>
+      <label class="control-row layer-option airport-layer"><span class="control-icon airport-icon" aria-hidden="true">⌖</span><span class="control-label">Aeropuertos</span><span class="switch"><input type="checkbox" id="airports-toggle" checked /><i></i></span></label>
+    </section>
+    <div class="control-group" role="group" aria-labelledby="map-group-title">
+      <h2 class="control-group-title" id="map-group-title">Mapa</h2>
+      <div class="control-row"><button class="btn-surface control-btn map-mode-control" id="map-mode-button" title="Cambiar vista entre 2D, 3D y globo"><span class="control-value">2D</span><span class="control-label">Vista</span></button></div>
+      <div class="control-row"><button class="btn-surface control-btn" id="map-style-button" title="Cambiar a imagen satélite"><span class="control-label">Mapa</span><span class="control-icon" aria-hidden="true">◐</span></button></div>
+      <div class="control-row"><button class="btn-surface control-btn" id="fullscreen-button" title="Pantalla completa"><span class="control-icon" aria-hidden="true">⛶</span><span class="control-label">Pantalla completa</span></button></div>
+      <div class="control-row"><button class="btn-surface control-btn" id="reset-view" title="Restablecer filtros y vista del mapa"><span class="control-icon" aria-hidden="true">↺</span><span class="control-label">Restablecer vista</span></button></div>
+    </div>
+  </nav>
+
+  <input type="file" id="file-input" accept=".kml,.kmz,application/vnd.google-earth.kml+xml,application/vnd.google-earth.kmz,application/xml,text/xml" multiple hidden />
   <div class="toast" id="toast" role="status" aria-live="polite"></div>
   <div class="modal-backdrop" id="modal-backdrop" hidden><section class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title"><button class="modal-close" id="modal-close" aria-label="Cerrar">×</button><div id="modal-content"></div></section></div>
-  <dialog class="import-dialog" id="import-dialog"><form method="dialog"><button class="modal-close" aria-label="Cerrar">×</button></form><div class="eyebrow"><i></i> ARCHIVOS LOCALES</div><h2>Añade tus <em>vuelos.</em></h2><p>Tus trazas se procesan en este navegador y se quedan en tu dispositivo.</p><label class="dropzone" id="dropzone"><span class="upload-icon">↑</span><b>Suelta KML o KMZ aquí</b><small>o toca para buscar archivos · admite varios</small><input type="file" id="drop-input" accept=".kml,.kmz,application/vnd.google-earth.kml+xml,application/vnd.google-earth.kmz" multiple hidden /></label><div class="import-progress" id="import-progress"></div><div class="import-note">Altura intenta leer fecha y aeropuertos de origen y destino desde el nombre del archivo; también puede reconocer códigos ICAO/IATA. Si no están, estima los aeropuertos a partir de los extremos de la ruta. Tus trazas se guardan solo en este navegador. Los mapas, el relieve, el catálogo público de aeropuertos y las búsquedas de lugares se solicitan a sus proveedores; tus rutas no se les envían.</div></dialog>
-
+  <dialog class="import-dialog" id="import-dialog"><form method="dialog"><button class="modal-close" aria-label="Cerrar">×</button></form><div class="eyebrow"><i></i> ARCHIVOS LOCALES</div><h2>Añade tus <em>vuelos.</em></h2><p>Las rutas se procesan en este navegador y se guardan en tu dispositivo.</p><label class="dropzone" id="dropzone"><span class="upload-icon">↑</span><b>Suelta archivos KML o KMZ aquí</b><small>o selecciona archivos · puedes añadir varios</small><input type="file" id="drop-input" accept=".kml,.kmz,application/vnd.google-earth.kml+xml,application/vnd.google-earth.kmz" multiple hidden /></label><div class="import-progress" id="import-progress"></div><div class="import-note">Altura intenta leer la fecha y los aeropuertos de origen y destino del nombre del archivo. También reconoce códigos ICAO/IATA y, si faltan, estima los aeropuertos a partir de los extremos de la ruta. Tus rutas permanecen en este navegador; el mapa, las imágenes satélite, el catálogo de aeropuertos y la búsqueda de lugares se solicitan a sus proveedores.</div></dialog>
   <template id="flight-row-template"><button class="flight-row"><span class="flight-color"></span><span class="flight-row-main"><b></b><small></small></span><span class="flight-row-stats"><b></b><small></small></span><span class="flight-chevron">›</span></button></template>
 </body>
 </html>
+

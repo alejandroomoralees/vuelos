@@ -28,7 +28,7 @@ function gatherHotspots() {
 }
 
 function stopTour() {
-  clearTimeout(timer); tour = []; button.classList.remove("active"); button.querySelector("span").textContent = "Tour"; button.title = "Recorrer zonas con más actividad";
+  clearTimeout(timer); tour = []; button.classList.remove("active"); (button.querySelector(".control-label") || button.querySelector("span")).textContent = "Tour"; button.title = "Recorrer zonas con más actividad";
   window.alturaGetMap?.()?.closePopup();
 }
 
@@ -52,6 +52,7 @@ button.addEventListener("click", () => {
   tour = gatherHotspots(); tourIndex = 0;
   if (!tour.length) { window.alturaShowToast?.("Importa vuelos para recorrer las zonas de actividad."); return; }
   if (window.alturaMapMode?.() !== "2d") window.alturaSetMapMode?.("2d");
-  button.classList.add("active"); button.querySelector("span").textContent = "Parar"; button.title = "Detener la visita guiada";
+  button.classList.add("active"); (button.querySelector(".control-label") || button.querySelector("span")).textContent = "Parar"; button.title = "Detener la visita guiada";
   visitNext();
 });
+

@@ -168,7 +168,7 @@ function applyMapStyle() {
   }
   const button = document.querySelector("#map-style-button");
   if (button) {
-    button.querySelector("span").textContent = satellite ? "Satélite" : "Mapa";
+    (button.querySelector(".control-label") || button.querySelector("span")).textContent = satellite ? "Satélite" : "Mapa";
     button.title = satellite ? "Cambiar a mapa de calles" : "Cambiar a imagen satélite";
   }
 }
@@ -185,7 +185,7 @@ function setMode(next) {
       window.alturaGetMap?.()?.setView([center.lat, center.lng], map3d.getZoom(), { animate: false });
     }
     window.alturaGetMap?.()?.invalidateSize();
-    modeButton.querySelector("span").textContent = "2D";
+    (modeButton.querySelector(".control-value") || modeButton.querySelector("span")).textContent = "2D";
     modeButton.title = "Cambiar a relieve 3D";
     return;
   }
@@ -199,10 +199,10 @@ function setMode(next) {
   applyMode();
   refreshMapData();
   if (mode === "3d") {
-    modeButton.querySelector("span").textContent = "3D";
+    (modeButton.querySelector(".control-value") || modeButton.querySelector("span")).textContent = "3D";
     modeButton.title = "Cambiar a vista de globo";
   } else {
-    modeButton.querySelector("span").textContent = "Globo";
+    (modeButton.querySelector(".control-value") || modeButton.querySelector("span")).textContent = "Globo";
     modeButton.title = "Volver al mapa 2D";
   }
 }
@@ -237,3 +237,4 @@ for (const selector of ["#year-filter", "#side-year", "#aircraft-filter", "#airp
 document.querySelectorAll('input[name="layer"]').forEach(input => input.addEventListener("change", () => setTimeout(refreshMapData, 20)));
 new MutationObserver(() => refreshMapData()).observe(document.querySelector("#flight-list"), { childList: true, subtree: true });
 window.addEventListener("resize", () => map3d?.resize());
+
