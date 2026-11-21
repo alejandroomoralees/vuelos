@@ -1,0 +1,13 @@
+#map.map-muted .leaflet-tile{filter:saturate(.25) brightness(.92) sepia(.08)}
+.map-legend.speed .legend-title{color:#477f88}
+.map-legend.heat .legend-title{color:#a95c41}
+.dock-table:empty{display:none}
+.search-message{cursor:default;color:#858e8a}
+.mobile-close{display:none}
+.leaflet-control-zoom{border:1px solid #d9ddd2!important;border-radius:3px!important;box-shadow:0 2px 8px #142b3515!important}
+.leaflet-control-zoom a{color:#536366!important;background:#fffdf6ed!important;border-color:#e2e3dc!important}
+.leaflet-control-zoom a:hover{color:#cf6744!important;background:#f3e4d9!important}
+.flight-detail-date{font:8px var(--mono);letter-spacing:.06em;color:#88928f}
+.section-hint{font-size:9px;color:#8a9692;margin-top:5px}
+.hidden{display:none!important}
+@media(max-width:760px){.mobile-close{display:block}}

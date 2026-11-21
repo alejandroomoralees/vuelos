@@ -1,76 +1,73 @@
 <!doctype html>
 <html lang="es">
-  <head>
-    <meta charset="utf-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <meta name="theme-color" content="#101d2c" />
-    <meta name="description" content="Tu año en el aire: explora y celebra tus vuelos." />
-    <title>Altura — Tu año en el aire</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
-    <link rel="stylesheet" href="styles.css" />
-    <script src="app.js" defer></script>
-  </head>
-  <body>
-    <header class="topbar">
-      <a class="brand" href="#inicio" aria-label="Altura, inicio"><span class="brand-mark">A</span><span>altura<span class="brand-dot">.</span></span></a>
-      <nav><a href="#resumen">Resumen</a><a href="#mapa">Mapa</a><a href="#vuelos">Vuelos</a></nav>
-      <button class="button button-small" id="header-import">Importar KML <span aria-hidden="true">↗</span></button>
-    </header>
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="theme-color" content="#101d2c" />
+  <meta name="description" content="Tu año en el aire: un mapa privado de todos tus vuelos." />
+  <title>Altura — Tu año en el aire</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@400;500;600;700&family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <link rel="stylesheet" href="styles.css" />
+  <link rel="stylesheet" href="overrides.css" />
+  <script defer src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/fflate@0.8.2/umd/index.js"></script>
+  <script defer src="https://cdn.jsdelivr.net/npm/html2canvas@1.4.1/dist/html2canvas.min.js"></script>
+  <script defer src="app.js"></script>
+</head>
+<body>
+  <header class="topbar">
+    <a class="brand" href="#" aria-label="Altura"><span class="brand-mark">A</span><span>altura<span class="brand-dot">.</span></span></a>
+    <div class="top-search"><span class="search-glyph">⌕</span><input id="search-input" type="search" autocomplete="off" placeholder="Busca un lugar o aeropuerto…" aria-label="Buscar lugar o aeropuerto" /><kbd>/</kbd><div class="search-results" id="search-results"></div></div>
+    <div class="top-actions"><label class="season-select"><span>TEMPORADA</span><select id="year-filter"><option value="all">Todos los años</option></select></label><button class="icon-action" id="wrapped-button" title="Tu resumen Wrapped">✦ <span>Wrapped</span></button><button class="button button-small" id="import-button">Añadir vuelos <span>＋</span></button></div>
+    <input type="file" id="file-input" accept=".kml,.kmz,application/vnd.google-earth.kml+xml,application/vnd.google-earth.kmz,application/xml,text/xml" multiple hidden />
+  </header>
 
-    <main id="inicio">
-      <section class="hero">
-        <div class="hero-copy">
-          <div class="eyebrow"><span class="eyebrow-line"></span> TU HISTORIA, VISTA DESDE ARRIBA</div>
-          <h1>Cada vuelo<br />deja <em>huella.</em></h1>
-          <p class="hero-lede">Un año de cielos, destinos y momentos que merecen volver a volar.</p>
-          <button class="button button-primary" id="hero-import">Descubre tu año <span aria-hidden="true">↓</span></button>
-          <p class="privacy"><span class="lock-icon">▣</span> Tus archivos se quedan en tu dispositivo.</p>
+  <main class="workspace">
+    <aside class="sidebar" id="sidebar">
+      <div class="side-head"><div><div class="eyebrow"><i></i> TU BITÁCORA</div><h1>Todos los <em>vuelos.</em></h1></div><button class="icon-button mobile-close" id="close-sidebar" aria-label="Cerrar panel">×</button></div>
+      <div class="summary-mini"><span class="summary-count" id="flight-count">0</span><span>VUELOS REGISTRADOS</span><span class="summary-season" id="season-label">SIN TEMPORADA</span></div>
+      <div class="filter-row"><label><span>AÑO</span><select id="side-year"><option value="all">Todos</option></select></label><label><span>AERONAVE</span><select id="aircraft-filter"><option value="all">Todas</option></select></label></div>
+      <section class="layer-controls">
+        <div class="side-section-title"><span>CAPAS DEL MAPA</span><button class="small-link" id="reset-view">Restablecer</button></div>
+        <label class="layer-option"><span class="layer-icon heat-icon">◉</span><span><b>Tiempo en ruta</b><small>Mapa de calor</small></span><input type="radio" name="layer" value="heat" /><i class="radio-ui"></i></label>
+        <label class="layer-option"><span class="layer-icon altitude-icon">⌁</span><span><b>Altitud</b><small>De bajo a alto</small></span><input type="radio" name="layer" value="altitude" checked /><i class="radio-ui"></i></label>
+        <label class="layer-option"><span class="layer-icon speed-icon">↗</span><span><b>Velocidad</b><small>Ritmo sobre el suelo</small></span><input type="radio" name="layer" value="speed" /><i class="radio-ui"></i></label>
+        <div class="toggle-line"><span class="layer-icon airport-icon">⌖</span><span><b>Aeropuertos</b><small>Escalas y visitas</small></span><label class="switch"><input type="checkbox" id="airports-toggle" checked /><i></i></label></div>
+      </section>
+      <section class="flight-list-section">
+        <div class="side-section-title"><span>VUELOS</span><button class="small-link" id="sort-flights">FECHA ↓</button></div>
+        <div class="flight-search"><span>⌕</span><input id="flight-search" type="search" placeholder="Filtrar vuelos" aria-label="Filtrar vuelos" /><kbd>⌘K</kbd></div>
+        <div class="flight-list" id="flight-list"><div class="empty-sidebar"><span>✈</span><p>Aún no hay vuelos.<br /><button class="text-button" id="empty-import">Importa archivos KML o KMZ</button></p></div></div>
+      </section>
+      <div class="sidebar-bottom"><span class="privacy-dot"></span> ARCHIVOS PRIVADOS EN ESTE DISPOSITIVO <button id="clear-flights" title="Quitar todos los vuelos">BORRAR</button></div>
+    </aside>
+
+    <section class="map-workspace">
+      <div id="map" role="application" aria-label="Mapa interactivo de vuelos"></div>
+      <div class="map-toolbar map-toolbar-left"><button class="map-tool active" data-action="select" title="Seleccionar vuelos">↖</button><button class="map-tool" data-action="measure" title="Medir una ruta">⌁</button><button class="map-tool" data-action="section" title="Trazar perfil de sección">⌗</button><span class="tool-divider"></span><button class="map-tool" id="fullscreen-button" title="Pantalla completa">⛶</button></div>
+      <div class="map-toolbar map-toolbar-right"><button class="map-tool text-tool" id="map-style-button" title="Cambiar estilo del mapa">◐ <span>Mapa</span></button><button class="map-tool text-tool" id="share-button" title="Copiar enlace de esta vista">↗ <span>Compartir vista</span></button><button class="map-tool text-tool" id="export-button" title="Exportar imagen del mapa">⇩ <span>Exportar</span></button></div>
+      <div class="map-legend" id="map-legend"><span class="legend-title">ALTITUD</span><div class="legend-gradient altitude-gradient"></div><div class="legend-values"><span id="legend-low">0 m</span><span id="legend-high">— m</span></div></div>
+      <div class="map-badge"><span>ALTURA</span><b>ROUTE LOG</b><small id="map-point-count">SIN DATOS</small></div>
+      <div class="map-tools-mobile"><button id="mobile-sidebar">☰ VUELOS</button><button id="mobile-layers">◉ CAPAS</button></div>
+      <section class="bottom-dock" id="bottom-dock">
+        <div class="dock-top"><div class="dock-tabs"><button class="dock-tab active" data-tab="overview">Resumen</button><button class="dock-tab" data-tab="flights">Vuelos</button><button class="dock-tab" data-tab="airports">Aeropuertos</button><button class="dock-tab" data-tab="profile">Perfil</button></div><button class="dock-expand" id="dock-expand" aria-label="Expandir resumen">⌃</button></div>
+        <div class="dock-content" id="dock-content">
+          <div class="dock-metrics"><article><span>DISTANCIA TOTAL</span><strong><b id="stat-distance">—</b><small> km</small></strong><i>⌁</i></article><article><span>TIEMPO EN EL AIRE</span><strong id="stat-time">—</strong><i>◷</i></article><article><span>ALTITUD MÁXIMA</span><strong><b id="stat-altitude">—</b><small> m</small></strong><i>⌃</i></article><article><span>VISITAS</span><strong id="stat-airports">—</strong><i>⌖</i></article></div>
+          <div class="dock-chart-wrap"><div class="dock-chart-label"><b id="chart-title">Vuelos por temporada</b><span id="chart-subtitle">IMPORTA TUS REGISTROS PARA VER TENDENCIAS</span></div><canvas id="year-chart" height="70"></canvas></div>
+          <div class="dock-table" id="dock-table"></div>
         </div>
-        <div class="hero-art" aria-hidden="true">
-          <div class="sun"></div><div class="orbit orbit-one"></div><div class="orbit orbit-two"></div>
-          <div class="route route-one"></div><div class="route route-two"></div>
-          <span class="point point-a"></span><span class="point point-b"></span><span class="point point-c"></span>
-          <span class="plane">✈</span><span class="art-label label-a">41°23′ N</span><span class="art-label label-b">2°10′ E</span>
-          <span class="art-caption">EL CIELO ES TUYO</span>
-        </div>
-        <div class="hero-bottom"><span>01 / TU TEMPORADA</span><span>DESPLÁZATE PARA EXPLORAR ↓</span></div>
       </section>
+      <section class="replay-bar" id="replay-bar"><button class="replay-play" id="replay-play" title="Reproducir vuelos">▶</button><button class="replay-all" id="replay-all">Reproducir todo</button><div class="replay-track"><span class="replay-current" id="replay-current">LISTA PARA DESPEGAR</span><input type="range" id="replay-range" min="0" max="1000" value="0" /><div class="replay-times"><span>INICIO</span><span id="replay-clock">00:00</span><span>FINAL</span></div></div><button class="replay-speed" id="replay-speed">1×</button></section>
+    </section>
+  </main>
 
-      <section class="import-panel" id="importar">
-        <div class="section-kicker">EMPIEZA AQUÍ <span>01</span></div>
-        <div class="import-content">
-          <div><h2>Trae tus vuelos.<br /><em>El resto despega solo.</em></h2><p>Importa tus archivos KML y construimos tu resumen en este navegador. No se suben a ningún servidor.</p></div>
-          <div class="dropzone" id="dropzone" tabindex="0" role="button" aria-label="Selecciona o arrastra archivos KML">
-            <div class="upload-icon">↑</div><strong>Suelta tus archivos KML aquí</strong><span>o <button class="text-button" id="browse">búscalos en tu dispositivo</button></span><small>Admite varios archivos .kml</small>
-          </div>
-        </div>
-        <input type="file" id="file-input" accept=".kml,application/vnd.google-earth.kml+xml,application/xml,text/xml" multiple hidden />
-        <div class="import-message" id="import-message" aria-live="polite"></div>
-      </section>
+  <div class="toast" id="toast" role="status" aria-live="polite"></div>
+  <div class="modal-backdrop" id="modal-backdrop" hidden><section class="modal" id="modal" role="dialog" aria-modal="true" aria-labelledby="modal-title"><button class="modal-close" id="modal-close" aria-label="Cerrar">×</button><div id="modal-content"></div></section></div>
+  <dialog class="import-dialog" id="import-dialog"><form method="dialog"><button class="modal-close" aria-label="Cerrar">×</button></form><div class="eyebrow"><i></i> ARCHIVOS LOCALES</div><h2>Añade tus <em>vuelos.</em></h2><p>Tus trazas se procesan en este navegador y se quedan en tu dispositivo.</p><label class="dropzone" id="dropzone"><span class="upload-icon">↑</span><b>Suelta KML o KMZ aquí</b><small>o toca para buscar archivos · admite varios</small><input type="file" id="drop-input" accept=".kml,.kmz,application/vnd.google-earth.kml+xml,application/vnd.google-earth.kmz" multiple hidden /></label><div class="import-progress" id="import-progress"></div><div class="import-note">Este prototipo mantiene los datos en memoria hasta que cierres la página. Los tiles del mapa y las búsquedas de lugares se solicitan a sus proveedores.</div></dialog>
 
-      <section class="dashboard" id="resumen">
-        <div class="section-heading"><div><div class="section-kicker">TU AÑO EN EL AIRE <span>02</span></div><h2>Una temporada <em>inolvidable.</em></h2></div><label class="year-select-wrap">TEMPORADA <select id="year-filter"><option value="all">Todos los años</option></select></label></div>
-        <div class="stat-grid" id="stats">
-          <article class="stat-card stat-dark"><span class="stat-label">VUELOS</span><strong id="stat-count">—</strong><span class="stat-note">momentos en el aire</span><span class="stat-symbol">↗</span></article>
-          <article class="stat-card stat-cream"><span class="stat-label">DISTANCIA TOTAL</span><strong><span id="stat-distance">—</span><small> km</small></strong><span class="stat-note">un viaje que no acaba</span><span class="stat-symbol">⌁</span></article>
-          <article class="stat-card stat-orange"><span class="stat-label">TIEMPO VOLANDO</span><strong id="stat-time">—</strong><span class="stat-note">horas mirando el mundo</span><span class="stat-symbol">◷</span></article>
-          <article class="stat-card stat-blue"><span class="stat-label">TECHO DE VUELO</span><strong><span id="stat-altitude">—</span><small> m</small></strong><span class="stat-note">tu punto más alto</span><span class="stat-symbol">⌃</span></article>
-        </div>
-        <div class="highlight-row"><div class="highlight-copy"><span class="highlight-tag">TU MOMENTO ESTELAR</span><h3 id="highlight-title">Tu próxima historia<br />empieza aquí.</h3><p id="highlight-copy">Importa tus vuelos y descubre los hitos de tu temporada.</p></div><div class="highlight-number"><span id="highlight-number">✦</span><small id="highlight-unit">LISTOS PARA DESPEGAR</small></div></div>
-      </section>
-
-      <section class="map-section" id="mapa">
-        <div class="section-heading"><div><div class="section-kicker">EL MAPA DE TUS RECUERDOS <span>03</span></div><h2>Por donde <em>te llevó el viento.</em></h2></div><div class="map-legend"><span><i></i> TUS RUTAS</span><span><i></i> PUNTOS DE VUELO</span></div></div>
-        <div class="map-frame"><svg id="flight-map" viewBox="0 0 1200 520" role="img" aria-label="Mapa con las rutas de tus vuelos"><g id="graticule"></g><g id="map-routes"></g><g id="map-points"></g><text class="map-empty" x="600" y="270" text-anchor="middle">Tus rutas aparecerán aquí</text></svg><div class="map-coordinates">LAT <span>—</span> LONG <span>—</span></div><div class="map-stamp">ALTURA<br /><b>ROUTE LOG</b><br />LOCAL DATA ONLY</div></div>
-      </section>
-
-      <section class="flights-section" id="vuelos">
-        <div class="section-heading"><div><div class="section-kicker">BITÁCORA <span>04</span></div><h2>Vuelo tras <em>vuelo.</em></h2></div><span class="flight-count" id="flight-count">0 REGISTROS</span></div>
-        <div class="flight-list" id="flight-list"><div class="empty-list"><span>✈</span><p>Tu bitácora te espera.<br /><button class="text-button" id="empty-import">Importa archivos KML para empezar.</button></p></div></div>
-      </section>
-      <footer><a class="brand" href="#inicio"><span class="brand-mark">A</span><span>altura<span class="brand-dot">.</span></span></a><span>TU HISTORIA, BAJO TU CONTROL.</span><a href="#inicio">VOLVER ARRIBA ↑</a></footer>
-    </main>
-  </body>
+  <template id="flight-row-template"><button class="flight-row"><span class="flight-color"></span><span class="flight-row-main"><b></b><small></small></span><span class="flight-row-stats"><b></b><small></small></span><span class="flight-chevron">›</span></button></template>
+</body>
 </html>
