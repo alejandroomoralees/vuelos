@@ -5,6 +5,7 @@ const modeButton = document.querySelector("#map-mode-button");
 const leafMap = window.alturaGetMap?.();
 let map3d = null;
 let mode = "2d";
+let mapStyle = new URLSearchParams(location.search).get("basemap") === "satellite" ? "satellite" : "streets";
 let routeData = { type: "FeatureCollection", features: [] };
 let heatData = { type: "FeatureCollection", features: [] };
 let airportData = { type: "FeatureCollection", features: [] };
@@ -18,9 +19,19 @@ const osmStyle = {
       tileSize: 256,
       attribution: '© <a href="https://www.openstreetmap.org/copyright" target="_blank" rel="noopener">OpenStreetMap contributors</a>',
       maxzoom: 19
+    },
+    satellite: {
+      type: "raster",
+      tiles: ["https://services.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"],
+      tileSize: 256,
+      attribution: 'Tiles © <a href="https://www.esri.com/" target="_blank" rel="noopener">Esri</a>',
+      maxzoom: 19
     }
   },
-  layers: [{ id: "osm-base", type: "raster", source: "osm", paint: { "raster-opacity": 1 } }]
+  layers: [
+    { id: "osm-base", type: "raster", source: "osm", layout: { visibility: "visible" }, paint: { "raster-opacity": 1 } },
+    { id: "satellite-base", type: "raster", source: "satellite", layout: { visibility: "none" }, paint: { "raster-opacity": 1 } }
+  ]
 };
 
 function getData() {
@@ -120,6 +131,7 @@ function createMap() {
     map3d.on("mouseenter", "flight-airports-layer", () => { map3d.getCanvas().style.cursor = "pointer"; });
     map3d.on("mouseleave", "flight-airports-layer", () => { map3d.getCanvas().style.cursor = ""; });
     refreshMapData();
+    applyMapStyle();
     applyMode();
   });
   map3d.on("error", event => {
@@ -138,6 +150,31 @@ function refreshMapData() {
   map3d.setLayoutProperty("flight-heat-layer", "visibility", data.layer === "heat" ? "visible" : "none");
   map3d.setLayoutProperty("flight-airports-layer", "visibility", window.alturaGetAirportsVisible?.() ? "visible" : "none");
 }
+
+function applyMapStyle() {
+  const satellite = mapStyle === "satellite";
+  if (map3d?.isStyleLoaded()) {
+    map3d.setLayoutProperty("osm-base", "visibility", satellite ? "none" : "visible");
+    map3d.setLayoutProperty("satellite-base", "visibility", satellite ? "visible" : "none");
+  }
+  const layers = window.alturaMapLayers;
+  const leafMap = window.alturaGetMap?.();
+  if (layers && leafMap) {
+    const active = satellite ? layers.satellite : layers.streets;
+    const inactive = satellite ? layers.streets : layers.satellite;
+    if (leafMap.hasLayer(inactive)) leafMap.removeLayer(inactive);
+    if (!leafMap.hasLayer(active)) active.addTo(leafMap);
+    document.querySelector("#map")?.classList.toggle("map-streets-dark", !satellite);
+  }
+  const button = document.querySelector("#map-style-button");
+  if (button) {
+    button.querySelector("span").textContent = satellite ? "Satélite" : "Mapa";
+    button.title = satellite ? "Cambiar a mapa de calles" : "Cambiar a imagen satélite";
+  }
+}
+window.alturaSetMapStyle = style => { mapStyle = style === "satellite" ? "satellite" : "streets"; applyMapStyle(); };
+window.alturaGetMapStyle = () => mapStyle;
+window.alturaSetMapStyle(mapStyle);
 
 function setMode(next) {
   mode = next;

@@ -1,6 +1,8 @@
 const GRID_SIZE = 2;
 let airports = [];
 let grid = new Map();
+const airportCodes = new Map();
+let airportAliases = [];
 let loading = false;
 let loaded = false;
 
@@ -54,7 +56,7 @@ async function loadAirports() {
     const field = (row, name) => row[header.get(name)] || "";
     airports = rows.flatMap(row => {
       const type = field(row, "type");
-      if (!["large_airport", "medium_airport", "small_airport", "closed"].includes(type)) return [];
+      if (!["large_airport", "medium_airport", "small_airport"].includes(type)) return [];
       const lat = Number(field(row, "latitude_deg")), lon = Number(field(row, "longitude_deg"));
       if (!Number.isFinite(lat) || !Number.isFinite(lon)) return [];
       const ident = field(row, "ident").trim().toUpperCase();
@@ -63,8 +65,20 @@ async function loadAirports() {
       const icao = /^[A-Z]{4}$/.test(gps) ? gps : /^[A-Z]{4}$/.test(ident) ? ident : "";
       return [{ id: field(row, "id") || ident || `${lat}:${lon}`, code: icao || iata || ident, icao, iata, ident, name: field(row, "name"), type, lat, lon, city: field(row, "municipality"), country: field(row, "iso_country"), elevationFt: Number(field(row, "elevation_ft")) || 0 }];
     });
+    airportCodes.clear();
+    for (const airport of airports) {
+      if (airport.icao && !airportCodes.has(airport.icao)) airportCodes.set(airport.icao, airport);
+      if (airport.iata && !airportCodes.has(airport.iata)) airportCodes.set(airport.iata, airport);
+      if (airport.ident && !airportCodes.has(airport.ident)) airportCodes.set(airport.ident, airport);
+    }
+    airportAliases = airports.flatMap(airport => [...new Set([airport.name, airport.name?.replace(/\b(?:international|regional|municipal|executive|county)?\s*airport\b/ig, " "), airport.city].filter(Boolean).map(normalizeAirportText))].map(name => ({ name, airport })).filter(item => item.name.length >= 5)).sort((a, b) => b.name.length - a.name.length);
     grid = makeGrid(airports);
     loaded = true;
+    for (const flight of window.alturaGetAllFlights?.() || []) {
+      const route = window.alturaRouteFromFilename?.(flight.file, flight.points) || {};
+      flight.origin ||= route.origin || null;
+      flight.destination ||= route.destination || null;
+    }
     window.alturaShowToast?.(`${airports.length.toLocaleString("es-ES")} aeropuertos listos para identificar tus escalas.`);
     window.alturaRefreshAirports?.();
   } catch (error) {
@@ -90,6 +104,35 @@ window.alturaNearestAirport = point => {
   }
   return best ? { ...best, matchDistanceKm: bestDistance } : null;
 };
+
+window.alturaRouteFromFilename = (filename, points = []) => {
+  const tokens = [...String(filename || "").toUpperCase().matchAll(/(?:^|[^A-Z0-9])([A-Z]{3,4})(?=$|[^A-Z0-9])/g)].map(match => match[1]);
+  const coded = [...new Map(tokens.map(code => [airportCodes.get(code)?.id, airportCodes.get(code)]).filter(([id, airport]) => id && airport)).values()];
+  const cleanName = normalizeAirportText(String(filename || "").replace(/\.[^.]+$/, ""));
+  const named = [];
+  if (coded.length < 2) for (const item of airportAliases) {
+    const index = ` ${cleanName} `.indexOf(` ${item.name} `);
+    if (index >= 0 && !named.some(airport => airport.id === item.airport.id)) named.push({ ...item.airport, filenameIndex: index });
+  }
+  named.sort((a, b) => a.filenameIndex - b.filenameIndex);
+  const nearOrigin = points[0] ? window.alturaNearestAirport?.(points[0]) : null;
+  const nearDestination = points.at(-1) ? window.alturaNearestAirport?.(points.at(-1)) : null;
+  let origin, destination;
+  if (coded.length > 1) { origin = coded[0]; destination = coded.at(-1); }
+  else if (nearOrigin && nearDestination) { origin = nearOrigin; destination = nearDestination; }
+  else if (named.length > 1) { origin = named[0]; destination = named.at(-1); }
+  else if (coded.length === 1) { origin = coded[0]; destination = nearDestination; }
+  else if (named.length === 1) {
+    if (nearDestination?.id === named[0].id) { origin = nearOrigin; destination = named[0]; }
+    else { origin = named[0]; destination = nearDestination; }
+  } else { origin = nearOrigin; destination = nearDestination; }
+  const format = airport => airport ? { id: airport.id, name: airport.name, city: airport.city, country: airport.country, code: airport.code, icao: airport.icao, iata: airport.iata, label: [airport.city || airport.name, airport.code].filter(Boolean).join(" · ") } : null;
+  return { origin: format(origin), destination: format(destination) };
+};
+
+function normalizeAirportText(value) {
+  return String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, " ").trim();
+}
 
 const flightList = document.querySelector("#flight-list");
 new MutationObserver(() => { if (!loaded && !loading && (window.alturaGetAllFlights?.().length || 0)) loadAirports(); }).observe(flightList, { childList: true, subtree: true });
