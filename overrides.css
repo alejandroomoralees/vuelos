@@ -10,4 +10,12 @@
 .flight-detail-date{font:8px var(--mono);letter-spacing:.06em;color:#88928f}
 .section-hint{font-size:9px;color:#8a9692;margin-top:5px}
 .hidden{display:none!important}
+.maplibre-overlay{position:absolute;inset:0 0 158px;z-index:3;display:none;background:#dfe4dc}
+.maplibre-overlay.is-active{display:block}
+.maplibre-overlay .maplibregl-canvas{outline:0}
+.maplibre-overlay .maplibregl-ctrl-attrib{font-size:9px;background:#ffffffdc;color:#586467}
+.maplibre-overlay .maplibregl-ctrl-attrib a{color:#385f68}
+.maplibre-overlay .maplibregl-ctrl-group{border:1px solid #d9ddd2;border-radius:3px;box-shadow:0 2px 8px #142b3515}
+.maplibre-overlay .maplibregl-ctrl-group button{background-color:#fffdf6ed}
 @media(max-width:760px){.mobile-close{display:block}}
+@media(max-width:760px){.maplibre-overlay{bottom:180px}}

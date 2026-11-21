@@ -23,11 +23,12 @@ Abre `http://localhost:8000` y añade archivos `.kml` o `.kmz`.
 - Enlaces que guardan la vista y los filtros del mapa, sin incluir las trazas privadas.
 - Exportación del mapa como imagen, exportación de trazas a KML y descarga de una tarjeta Wrapped.
 - Interfaz adaptable a móvil y escritorio.
+- Vistas 3D de relieve y globo mediante MapLibre.
 
 ## Datos y servicios externos
 
-Las rutas y estadísticas viven solo en la memoria de la pestaña y desaparecen al cerrarla. Los mosaicos de mapa se descargan de OpenStreetMap con su atribución visible. La búsqueda de lugares envía el texto de búsqueda a Photon, que usa datos de OpenStreetMap. Las librerías del mapa y de archivos comprimidos se sirven desde CDN. Ninguno de estos servicios recibe los archivos KML/KMZ.
+Las rutas y estadísticas viven solo en la memoria de la pestaña y desaparecen al cerrarla. Los mosaicos de mapa se descargan de OpenStreetMap con su atribución visible. La vista 3D también solicita mosaicos de elevación públicos a AWS. La búsqueda de lugares envía el texto de búsqueda a Photon, que usa datos de OpenStreetMap. Las librerías del mapa, archivos comprimidos y fuentes tipográficas se sirven desde CDN. Ninguno de estos servicios recibe los archivos KML/KMZ.
 
 ## En desarrollo
 
-El relieve 3D/globo, las cartas aeronáuticas, la base de datos de aeropuertos con códigos ICAO, los datos de aterrizajes y la visita guiada por puntos calientes aún no están implementados. La lista de aeropuertos de esta versión agrupa aproximando los extremos de las rutas.
+Las vistas 3D y globo ya están disponibles; el relieve representa el terreno y las rutas siguen elevadas por su altitud en el perfil, no como geometría tridimensional sobre el terreno. Las cartas aeronáuticas, la base de datos de aeropuertos con códigos ICAO, los datos de aterrizajes y la visita guiada por puntos calientes aún están en desarrollo. La lista de aeropuertos de esta versión agrupa aproximando los extremos de las rutas.
