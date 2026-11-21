@@ -192,6 +192,8 @@ def bundle(tmp_path_factory, monkeypatch):
     phone.write_text("/* test phone */", encoding="utf-8")
     extras = static / "extras.bundle.js"
     extras.write_text("/* test extras */", encoding="utf-8")
+    spanish = static / "spanish.bundle.js"
+    spanish.write_text("/* test spanish */", encoding="utf-8")
     monkeypatch.setattr("flown.site_assets.BUNDLE_FILE", bundle)
     monkeypatch.setattr("flown.site_assets.FEATURES_BUNDLE_FILE", features)
     monkeypatch.setattr("flown.site_assets.WRAPPED_BUNDLE_FILE", wrapped)
@@ -200,7 +202,7 @@ def bundle(tmp_path_factory, monkeypatch):
     monkeypatch.setattr("flown.site_assets.EXTRAS_BUNDLE_FILE", extras)
     monkeypatch.setattr(
         "flown.site_assets.BUNDLE_FILES",
-        (bundle, features, wrapped, search, phone, extras),
+        (bundle, features, wrapped, search, phone, extras, spanish),
     )
     return bundle
 

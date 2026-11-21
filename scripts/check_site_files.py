@@ -34,6 +34,7 @@ ASSETS = (
     "shared.bundle.js",
     "yearWorker.bundle.js",
     "localWorker.bundle.js",
+    "spanish.bundle.js",
     "styles.css",
     "features.css",
     "wrapped.css",

@@ -225,10 +225,10 @@ const markupPlugin = {
   },
 };
 
-// The page loads mapApp.bundle.js as a module. Replay and Wrapped are a
-// quarter of the frontend and most visits open neither, so features.ts
-// (replay) and wrapped.ts (Wrapped and the statistics panel) are entry
-// points of their own that the app imports the first time each is used
+// The page loads spanish.bundle.js and mapApp.bundle.js as modules. Replay and
+// Wrapped are a quarter of the frontend and most visits open neither, so
+// features.ts (replay) and wrapped.ts (Wrapped and the statistics panel) are
+// entry points of their own that the app imports the first time each is used
 // (services/featureLoader.ts), and so are search.ts (the search of airports
 // and places), phone.ts (the phone's bar and sheet), extras.ts (share
 // tokens, the export and the popup's list of flights) and local.ts (Your
@@ -258,6 +258,7 @@ const buildOptions = {
     join(FRONTEND_DIR, "phone.ts"),
     join(FRONTEND_DIR, "extras.ts"),
     join(FRONTEND_DIR, "local.ts"),
+    join(FRONTEND_DIR, "spanish.ts"),
   ],
   outdir: STATIC_DIR,
   entryNames: "[name].bundle",
@@ -512,6 +513,7 @@ const LOCAL_BUNDLE = "local.bundle.js";
 const SHARED_BUNDLE = "shared.bundle.js";
 const WORKER_BUNDLE = "yearWorker.bundle.js";
 const LOCAL_WORKER_BUNDLE = "localWorker.bundle.js";
+const SPANISH_BUNDLE = "spanish.bundle.js";
 
 /** @typedef {import("./scripts/build-helpers.js").Overrun} Overrun */
 
@@ -636,7 +638,7 @@ async function build() {
         esbuild.build(workerBuildOptions),
         esbuild.build(localWorkerBuildOptions),
       ]);
-      // The site publishes the ten by name (see assertExpectedOutputs)
+      // The site publishes the eleven by name (see assertExpectedOutputs)
       assertExpectedOutputs(
         [result.metafile, workerResult.metafile, localWorkerResult.metafile],
         [
@@ -650,6 +652,7 @@ async function build() {
           SHARED_BUNDLE,
           WORKER_BUNDLE,
           LOCAL_WORKER_BUNDLE,
+          SPANISH_BUNDLE,
         ],
       );
 

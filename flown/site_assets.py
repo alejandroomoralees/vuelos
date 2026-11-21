@@ -45,6 +45,7 @@ __all__ = [
     "PHONE_BUNDLE_FILE",
     "PYTHON_SOURCES_FILE",
     "SEARCH_BUNDLE_FILE",
+    "SPANISH_BUNDLE_FILE",
     "SHARED_BUNDLE_FILE",
     "SITE_FILES",
     "SITE_FILE_PATTERNS",
@@ -92,6 +93,7 @@ SHARED_BUNDLE_FILE = STATIC_DIR / "shared.bundle.js"
 # (frontend/services/yearWorker.ts). A build of its own in build.js.
 YEAR_WORKER_BUNDLE_FILE = STATIC_DIR / "yearWorker.bundle.js"
 LOCAL_WORKER_BUNDLE_FILE = STATIC_DIR / "localWorker.bundle.js"
+SPANISH_BUNDLE_FILE = STATIC_DIR / "spanish.bundle.js"
 BUNDLE_FILES = (
     BUNDLE_FILE,
     FEATURES_BUNDLE_FILE,
@@ -103,6 +105,7 @@ BUNDLE_FILES = (
     SHARED_BUNDLE_FILE,
     YEAR_WORKER_BUNDLE_FILE,
     LOCAL_WORKER_BUNDLE_FILE,
+    SPANISH_BUNDLE_FILE,
 )
 # The sources of the bundle; only present in a checkout, not in the image
 FRONTEND_DIR = Path(__file__).parent / "frontend"

@@ -187,7 +187,6 @@ import type {
   AppState,
 } from "./types";
 import { trustedHtml } from "./utils/trustedHtml";
-import { startSpanishTranslation } from "./ui/spanish";
 
 /**
  * Map configuration passed to constructor
@@ -1665,7 +1664,6 @@ export function reportInitFailure(error: unknown): void {
 
 // Start the app when the page has set its configuration (map_config.js runs
 // before this module); the unit tests import the module without one
-if (typeof document !== "undefined") startSpanishTranslation();
 if (typeof window !== "undefined" && window.MAP_CONFIG) {
   startApp(window.MAP_CONFIG).catch(reportInitFailure);
 }

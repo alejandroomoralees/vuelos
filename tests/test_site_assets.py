@@ -64,6 +64,8 @@ def bundle(tmp_path_factory, monkeypatch):
     phone.write_text("// phone\n")
     extras = static / "extras.bundle.js"
     extras.write_text("// extras\n")
+    spanish = static / "spanish.bundle.js"
+    spanish.write_text("// spanish\n")
     monkeypatch.setattr("flown.site_assets.BUNDLE_FILE", bundle)
     monkeypatch.setattr("flown.site_assets.FEATURES_BUNDLE_FILE", features)
     monkeypatch.setattr("flown.site_assets.WRAPPED_BUNDLE_FILE", wrapped)
@@ -72,7 +74,7 @@ def bundle(tmp_path_factory, monkeypatch):
     monkeypatch.setattr("flown.site_assets.EXTRAS_BUNDLE_FILE", extras)
     monkeypatch.setattr(
         "flown.site_assets.BUNDLE_FILES",
-        (bundle, features, wrapped, search, phone, extras),
+        (bundle, features, wrapped, search, phone, extras, spanish),
     )
     return bundle
 
@@ -305,7 +307,7 @@ class TestRenderHtml:
         modules = [
             s.get("src") for s in page.iter("script") if s.get("type") == "module"
         ]
-        assert modules == ["./mapApp.bundle.js"]
+        assert modules == ["./spanish.bundle.js", "./mapApp.bundle.js"]
         assert [
             link.get("href")
             for link in page.iter("link")
