@@ -5,7 +5,7 @@ Altura es una aplicación web para explorar rutas de vuelo desde archivos KML. L
 ## Funciones
 
 - Procesa los KML en el navegador y conserva el historial en el almacenamiento local.
-- Lee vuelo, fecha y aeropuertos desde el nombre de archivo de FlightAware; muestra IATA cuando se reconoce el aeropuerto español.
+- Lee vuelo, fecha y aeropuertos desde el nombre de archivo de FlightAware; convierte los aeropuertos españoles y varios destinos internacionales habituales a IATA.
 - Calcula distancia, altitud y velocidad cuando los datos del KML lo permiten.
 - Muestra las rutas en mapa satélite 3D, con relieve, perfil de altitud y reproducción.
 - Permite buscar vuelos, filtrar por año, ver el resumen anual y cambiar a mapa claro.
