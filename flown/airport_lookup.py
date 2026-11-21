@@ -78,6 +78,8 @@ __all__ = [
     "load_airport_database",
     "load_runway_database",
     "lookup_airport_coordinates",
+    "lookup_airport_iata_code",
+    "lookup_airport_name_by_code",
     "lookup_airport_country",
     "lookup_airport_elevation",
     "pin_runway_database",
@@ -186,6 +188,7 @@ class AirportRecord(NamedTuple):
     name: str
     country: str
     elevation_m: float | None = None
+    iata_code: str | None = None
 
 
 class RunwayEnd(NamedTuple):
@@ -460,8 +463,11 @@ def _airport_rows(text: IO[str]) -> dict[str, AirportRecord]:
             )
         except ValueError:
             elevation_m = None
+        iata_code = (row.get("iata_code") or "").strip().upper() or None
         if name:
-            airports[icao] = AirportRecord(lat, lon, name, country, elevation_m)
+            airports[icao] = AirportRecord(
+                lat, lon, name, country, elevation_m, iata_code
+            )
     return airports
 
 
@@ -474,13 +480,14 @@ class _StoredRows[T](NamedTuple):
 
 
 def _kept_airport(record: list[Any]) -> AirportRecord:
-    lat, lon, name, country, elevation_m = record
+    lat, lon, name, country, elevation_m, *iata = record
     return AirportRecord(
         float(lat),
         float(lon),
         str(name),
         str(country),
         None if elevation_m is None else float(elevation_m),
+        str(iata[0]) if iata and iata[0] else None,
     )
 
 
@@ -1163,6 +1170,29 @@ def lookup_airport_coordinates(icao_code: str) -> tuple[float, float, str] | Non
 
     logger.debug("Airport %s not found in database", icao_upper)
     return None
+
+
+def lookup_airport_iata_code(icao_code: str) -> str | None:
+    """Return the IATA display code for an ICAO airport code, if known."""
+    if not icao_code or len(icao_code) != 4:
+        return None
+    record = load_airport_database().get(icao_code.upper())
+    return record.iata_code if record is not None else None
+
+
+def lookup_airport_name_by_code(code: str) -> str | None:
+    """Resolve an ICAO or unique IATA code to the database's standard name."""
+    token = code.strip().upper()
+    if len(token) == 4:
+        return database_airport_name(token) if lookup_airport_coordinates(token) else None
+    if len(token) != 3:
+        return None
+    matches = [
+        icao
+        for icao, record in load_airport_database().items()
+        if record.iata_code == token
+    ]
+    return database_airport_name(matches[0]) if len(matches) == 1 else None
 
 
 def lookup_airport_country(icao_code: str) -> str | None:

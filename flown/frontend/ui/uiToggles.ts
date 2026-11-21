@@ -73,10 +73,6 @@ export class UIToggles {
   // The toggles only write the store: what the map shows, the buttons and
   // the legends follow it (see ui/layerVisibility.ts)
 
-  toggleHeatmap(): void {
-    if (this.app.map) this.app.heatmapVisible = !this.app.heatmapVisible;
-  }
-
   toggleAltitude(): void {
     this.toggleColorLayer("altitude");
   }
@@ -135,6 +131,10 @@ export class UIToggles {
 
   toggleSatellite(): void {
     if (this.app.map) this.app.satelliteVisible = !this.app.satelliteVisible;
+  }
+
+  toggleLightMode(): void {
+    this.app.lightModeVisible = !this.app.lightModeVisible;
   }
 
   /**

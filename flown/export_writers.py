@@ -9,6 +9,7 @@ from .airport_lookup import (
     database_airport_name,
     load_airport_database,
     lookup_airport_country,
+    lookup_airport_iata_code,
 )
 from .airports import extract_airport_name
 from .cache import atomic_data_write
@@ -123,6 +124,9 @@ def export_airports_data(
         icao_code = airport_icao_code(airport_name)
         if icao_code:
             airport_data["code"] = icao_code
+            iata_code = lookup_airport_iata_code(icao_code)
+            if iata_code:
+                airport_data["iata_code"] = iata_code
             country = lookup_airport_country(icao_code)
             if country:
                 airport_data["country"] = country

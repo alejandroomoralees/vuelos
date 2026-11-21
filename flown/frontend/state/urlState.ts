@@ -106,6 +106,7 @@ function visibilityString(state: AppState): string {
   const slots: string[] = new Array<string>(VISIBILITY_SLOTS).fill("0");
   for (const toggle of TOGGLES) {
     const url: ToggleUrl = toggle.url;
+    if (toggle.key === "heatmapVisible") continue;
     if ("slot" in url && state[toggle.key]) slots[url.slot] = "1";
   }
   return slots.join("");
@@ -124,7 +125,7 @@ function parseToggles(urlParams: URLSearchParams, state: AppState): void {
   for (const toggle of TOGGLES) {
     // Slot 4 belonged to the retired foreign chart overlay. Ignore it in
     // older links so it cannot dim the heatmap when no chart is present.
-    if (toggle.key === "aviationVisible") continue;
+    if (toggle.key === "aviationVisible" || toggle.key === "heatmapVisible") continue;
     const url: ToggleUrl = toggle.url;
     if ("slot" in url) {
       if (slots) state[toggle.key] = slots[url.slot] === "1";
@@ -166,10 +167,10 @@ function parsePathIds(urlParams: URLSearchParams): number[] | undefined {
  *   lat, lng - map center coordinates
  *   z - zoom level, in state units (one above the map's, see ZOOM_OFFSET)
  *   b - bearing in degrees, clockwise from north (absent: north up)
- *   t - tilt (pitch) in degrees (absent: flat)
- *   g, d, s, l - toggles with a parameter of their own, '1' when on: the
- *       globe, 3D, satellite imagery and the Flights tab of the
- *       statistics rail (absent: off). The `r` of the heat counted by
+ *   t - tilt (pitch) in degrees (absent: the default 3D pitch)
+ *   g, d, s, l, light - toggles with a parameter of their own, '1' when on: the
+ *       globe, 3D, satellite imagery, the Flights tab of the
+ *       statistics rail, and light mode (absent: each default). The `r` of the heat counted by
  *       distance and the `h` of the heat cloud's band of heights, which
  *       are gone, are ignored like any unknown parameter
  *   x - the line of the cross-section, from its start to its end:
@@ -305,9 +306,9 @@ export function encodeStateToUrl(state: AppState): string {
     params.set("z", state.zoom.toFixed(2));
   }
 
-  // The defaults stay out of the link: most views are north up, flat and
-  // in Mercator, and their links are no longer than they were. A tenth of
-  // a degree is finer than anyone can see.
+  // North-up and Mercator defaults stay out of the link. Nonzero pitch is
+  // written so the default 3D view is preserved. A tenth of a degree is
+  // finer than anyone can see.
   const bearing = roundToTenth(state.bearing ?? 0);
   if (bearing !== 0) params.set("b", String(bearing));
   const pitch = roundToTenth(state.pitch ?? 0);

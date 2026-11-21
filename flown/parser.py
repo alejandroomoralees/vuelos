@@ -11,6 +11,7 @@ from typing import TYPE_CHECKING, Any
 from lxml import etree
 
 from .aircraft import parse_aircraft_from_filename
+from .airport_lookup import lookup_airport_name_by_code
 from .constants import KML_NAMESPACE, KML_NAMESPACES, MAX_TIMESTAMP_DISTANCE_SECONDS
 from .exceptions import KMLParseError
 from .helpers import parse_timestamp_epoch
@@ -244,6 +245,24 @@ _UTF8_BOM = b"\xef\xbb\xbf"
 _KML_NAMESPACE_PATTERN = re.compile(
     r"http://(?:earth\.google\.com|www\.opengis\.net)/kml/\d+\.\d+"
 )
+_FLIGHTAWARE_NAME = re.compile(
+    r"^FlightAware_[^*]+\*(?P<origin>[A-Z0-9]{3,4})_"
+    r"(?P<destination>[A-Z0-9]{3,4})_\*[^.]+$",
+    re.IGNORECASE,
+)
+
+
+def _flightaware_route(filename: str) -> tuple[str, str] | None:
+    """Read FlightAware's origin/destination tokens from a KML filename."""
+    match = _FLIGHTAWARE_NAME.fullmatch(Path(filename).stem)
+    if not match:
+        return None
+    origin_code = match.group("origin").upper()
+    destination_code = match.group("destination").upper()
+    return (
+        lookup_airport_name_by_code(origin_code) or origin_code,
+        lookup_airport_name_by_code(destination_code) or destination_code,
+    )
 
 
 def _xml_parser(*, recover: bool = False) -> etree.XMLParser:
@@ -782,6 +801,14 @@ def _parse_kml(kml_file: str) -> ParseResult:
     coordinates.extend(track_coordinates)
     path_groups.extend(track_paths)
     path_metadata.extend(track_metadata)
+
+    if route := _flightaware_route(kml_file):
+        start_airport, end_airport = route
+        route_name = f"{start_airport} - {end_airport}"
+        for metadata in path_metadata:
+            metadata["airport_name"] = route_name
+            metadata["start_airport"] = start_airport
+            metadata["end_airport"] = end_airport
 
     if damage is not None:
         if not path_groups:

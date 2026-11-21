@@ -52,7 +52,6 @@ export const SELECTION_CONTROL_IDS = [
  * (see ui/replayManager.ts and ui/replayAll.ts).
  */
 export const REPLAY_HELD_CONTROL_IDS = [
-  "heatmap-btn",
   "airports-btn",
   "wrapped-btn",
   "year-select",

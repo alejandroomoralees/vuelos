@@ -43,6 +43,7 @@ import {
   RotateCcw,
   Route,
   Satellite,
+  Sun,
   Ruler,
   Search,
   SlidersHorizontal,
@@ -88,6 +89,7 @@ export type IconName =
   | "globe"
   | "threeD"
   | "satellite"
+  | "lightMode"
   | "compass"
   | "trophy"
   | "externalLink"
@@ -150,6 +152,7 @@ const NODES: Record<Exclude<IconName, keyof typeof OWN_PATHS>, IconNode> = {
   globe: Globe,
   threeD: Box,
   satellite: Satellite,
+  lightMode: Sun,
   // An arrow rather than Lucide's compass rose: the control turns it to
   // where north is, and the rose reads the same from every side. It points
   // north-east; the stylesheet turns it upright.

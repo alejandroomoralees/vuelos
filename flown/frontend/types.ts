@@ -205,6 +205,8 @@ export interface Airport {
    * flown/airport_lookup.py); left out for a name without one
    */
   code?: string;
+  /** IATA code used on the map marker when available */
+  iata_code?: string;
   country?: string;
 }
 

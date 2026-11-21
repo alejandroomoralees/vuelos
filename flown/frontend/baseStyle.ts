@@ -18,15 +18,22 @@ import { MAP_SKY } from "./utils/constants";
  * style, its tiles, glyphs and sprite all come from hosts under
  * basemaps.cartocdn.com.
  */
-const CARTO_STYLE_URL =
+const CARTO_DARK_STYLE_URL =
   "https://basemaps.cartocdn.com/gl/dark-matter-gl-style/style.json";
+const CARTO_LIGHT_STYLE_URL =
+  "https://basemaps.cartocdn.com/gl/positron-gl-style/style.json";
 const CARTO_HOST = /(^|\.)basemaps\.cartocdn\.com$/;
 
 /** The base style, with the API key when the site was built with one */
-export function cartoStyleUrl(apiKey?: string): string {
+export function cartoStyleUrl(
+  apiKey?: string,
+  mode: "dark" | "light" = "dark",
+): string {
+  const baseUrl =
+    mode === "light" ? CARTO_LIGHT_STYLE_URL : CARTO_DARK_STYLE_URL;
   return apiKey
-    ? `${CARTO_STYLE_URL}?key=${encodeURIComponent(apiKey)}`
-    : CARTO_STYLE_URL;
+    ? `${baseUrl}?key=${encodeURIComponent(apiKey)}`
+    : baseUrl;
 }
 
 /**

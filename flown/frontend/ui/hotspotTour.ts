@@ -118,7 +118,6 @@ export const TOUR_NOTHING_MESSAGE =
  * take the map from it, Your flights among them
  */
 const HELD_CONTROL_IDS = [
-  "heatmap-btn",
   "three-d-btn",
   "compass-btn",
   "compass-float-btn",

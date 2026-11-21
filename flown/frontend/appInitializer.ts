@@ -485,7 +485,10 @@ export function createAirportMarkers(app: MapApp, airports: Airport[]): void {
 
   for (const airport of airports) {
     const name = airport.name;
-    const element = createAirportElement(name, airport.code ?? NO_CODE_LABEL);
+    const element = createAirportElement(
+      name,
+      airport.iata_code ?? airport.code ?? NO_CODE_LABEL,
+    );
     // The relief or the far side of the globe hides it, and its code with
     // it: the stylesheet fades it out (`opacityWhenCovered` is its opacity)
     const marker = new Marker({

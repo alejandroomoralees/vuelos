@@ -355,7 +355,8 @@ export class MapApp {
   private resolveMapReady!: (map: MapLibreMap) => void;
   private rejectMapReady!: (reason: unknown) => void;
   /** Where the request for the base style stands; "idle" before and between */
-  private baseStyle: "idle" | "loading" | "loaded" = "idle";
+  private baseStyle: "idle" | "loading" | "dark" | "light" = "idle";
+  private baseStyleRequest = 0;
   /** Whether the one timed retry of the base style has been spent */
   private baseStyleRetried = false;
   /** Whether its failure has been said, which happens once a page */
@@ -565,6 +566,15 @@ export class MapApp {
     const yearSelect = domCache.get("year-select", HTMLSelectElement);
     const shipped = yearSelect?.value;
     restoreState(this);
+    this.setPageTheme(this.lightModeVisible);
+    this.store.subscribe("lightModeVisible", (light) => {
+      this.setPageTheme(light);
+      this.baseStyleRequest++;
+      this.baseStyle = "idle";
+      this.baseStyleRetried = false;
+      this.baseStyleToast = false;
+      void this.loadBaseStyle();
+    }, { signal: this.signal });
     if (intro) {
       // The sender's flights, not the visitor's: their next visit without a
       // link opens on their own (StateManager.visiting). Nor does the link
@@ -796,7 +806,7 @@ export class MapApp {
       // MapOrientation brings it back. A view opens north up and flat
       // unless the link or the saved state says otherwise.
       bearing,
-      pitch: this.savedState?.pitch ?? 0,
+      pitch: this.savedState?.pitch ?? (this.threeDVisible ? 50 : 0),
       maxPitch: MAP_MAX_PITCH,
       fadeDuration: animate ? 300 : 0,
     });
@@ -899,22 +909,38 @@ export class MapApp {
    */
   private async loadBaseStyle(): Promise<void> {
     const map = this.map;
-    if (this.baseStyle !== "idle" || this.destroyed || !map) return;
+    const mode = this.lightModeVisible ? "light" : "dark";
+    if (
+      this.baseStyle === mode ||
+      this.baseStyle === "loading" ||
+      this.destroyed ||
+      !map
+    ) {
+      return;
+    }
+    const request = ++this.baseStyleRequest;
     this.baseStyle = "loading";
     try {
-      const response = await fetch(cartoStyleUrl(this.config.cartoApiKey), {
-        signal: this.signal,
-      });
+      const response = await fetch(
+        cartoStyleUrl(this.config.cartoApiKey, mode),
+        { signal: this.signal },
+      );
       if (!response.ok) throw new Error(`HTTP ${response.status}`);
       const style = (await response.json()) as StyleSpecification;
       // `destroy()` leaves the map as it is, also for an answer that was
       // already being read when the request was aborted
-      if (this.destroyed) return;
-      this.baseStyle = "loaded";
+      if (
+        this.destroyed ||
+        request !== this.baseStyleRequest ||
+        mode !== (this.lightModeVisible ? "light" : "dark")
+      ) {
+        return;
+      }
+      this.baseStyle = mode;
       setBaseStyle(map, style);
       dismissToast(BASE_STYLE_UNAVAILABLE_MESSAGE);
     } catch (error) {
-      if (this.destroyed) return;
+      if (this.destroyed || request !== this.baseStyleRequest) return;
       this.baseStyle = "idle";
       const message = error instanceof Error ? error.message : String(error);
       logError(`Base map style failed to load: ${message}`);
@@ -929,6 +955,14 @@ export class MapApp {
       this.baseStyleRetried = true;
       setTimeout(() => void this.loadBaseStyle(), BASE_STYLE_RETRY_MS);
     }
+  }
+
+  /** Keep the page chrome and the browser's theme colour in step. */
+  private setPageTheme(light: boolean): void {
+    document.documentElement.dataset["theme"] = light ? "light" : "dark";
+    document
+      .querySelector<HTMLMetaElement>('meta[name="theme-color"]')
+      ?.setAttribute("content", light ? "#f5f7fa" : "#141414");
   }
 
   /**
@@ -1021,7 +1055,7 @@ export class MapApp {
   /**
    * Go back to what a first visit shows: the newest year, every aircraft,
    * the heatmap and the airports, nothing selected or shared, no
-   * cross-section, flat and north up over all the flights. It goes through
+   * cross-section, in satellite and 3D view over all the flights. It goes through
    * the year filter, so the dropdowns, the loaded data and the store change
    * together in one batch; the saved state and the link follow the store
    * and the camera as ever. Out of reach during a replay, like the
@@ -1064,7 +1098,7 @@ export class MapApp {
     const map = this.map;
     map?.fitBounds(this.measureStartView(map), {
       padding: startViewPadding(map.getContainer()),
-      pitch: 0,
+      pitch: this.threeDVisible ? 50 : 0,
     });
   }
 

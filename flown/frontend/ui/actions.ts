@@ -134,7 +134,6 @@ type ActionHandler = (e?: Event) => void;
  */
 function actionHandlers(app: MapApp) {
   return {
-    toggleHeatmap: () => app.uiToggles.toggleHeatmap(),
     // A store write: the rail follows the key, and the panel's own code,
     // which is lazily loaded, arrives on the first opening (ui/statsPanel.ts).
     // Opened from the keyboard (a click without a pointer, detail 0), the
@@ -153,6 +152,7 @@ function actionHandlers(app: MapApp) {
     toggleGlobe: () => app.mapOrientation.toggleGlobe(),
     toggleThreeD: () => app.mapOrientation.toggleThreeD(),
     toggleSatellite: () => app.uiToggles.toggleSatellite(),
+    toggleLightMode: () => app.uiToggles.toggleLightMode(),
     resetNorth: () => app.mapOrientation.resetNorth(),
     resetView: () => {
       app.resetView().catch(logError);

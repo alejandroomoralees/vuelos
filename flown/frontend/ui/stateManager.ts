@@ -103,7 +103,7 @@ export function sanitizeSavedState(candidate: unknown): SavedState {
   if (pitch !== null) result.pitch = pitch;
   for (const key of TOGGLE_KEYS) {
     // Remove the retired foreign aviation overlay from saved browser state.
-    if (key === "aviationVisible") continue;
+    if (key === "aviationVisible" || key === "heatmapVisible") continue;
     const value = candidate[key];
     if (typeof value === "boolean") {
       result[key] = value;
@@ -241,6 +241,10 @@ export class StateManager {
       // Replay state is not persisted: too complex to restore reliably
     };
     for (const toggle of TOGGLES) {
+      if (toggle.key === "heatmapVisible") {
+        state[toggle.key] = false;
+        continue;
+      }
       state[toggle.key] =
         "panel" in toggle
           ? this.panelVisible(toggle.key)

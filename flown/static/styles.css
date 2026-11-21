@@ -196,6 +196,43 @@
   --duration-base: 0.3s;
 }
 
+/* The optional light theme follows the same UI tokens while CARTO switches
+   its base map from Dark Matter to Positron. */
+:root[data-theme="light"] {
+  color-scheme: light;
+  --color-bg-primary: #f5f7fa;
+  --color-bg-secondary: #ffffff;
+  --color-bg-raised: #edf1f5;
+  --color-bg-hover: #e7edf3;
+  --color-bg-active: #dce5ed;
+  --color-map-bg: #e8edf1;
+  --color-border: #cbd5df;
+  --color-divider: #dce3ea;
+  --color-text: #17212b;
+  --color-text-secondary: #344454;
+  --color-text-muted: #5d6d7d;
+  --color-text-dim: #536273;
+  --color-accent-blue: #0875c9;
+  --color-bg-secondary-rgb: 255, 255, 255;
+  --color-text-rgb: 23, 33, 43;
+  --color-accent-blue-rgb: 8, 117, 201;
+  --color-home-blue-rgb: 0, 98, 204;
+  --gradient-wrapped-card: linear-gradient(
+    135deg,
+    #e8f1fb,
+    #d5e8fb 50%,
+    #bbd8f3
+  );
+  --selection-highlight-color: #17212b;
+  --terrain-shadow: rgba(30, 50, 70, 0.3);
+  --terrain-highlight: rgba(255, 255, 255, 0.4);
+  --satellite-brightness: 0.8;
+  --satellite-saturation: 0;
+  --satellite-contrast: 0;
+  --shadow-color: rgba(24, 39, 55, 0.12);
+  --shadow-color-strong: rgba(24, 39, 55, 0.22);
+}
+
 /* A coarse pointer gets the larger target whatever the viewport is: the
    control height is a touch question, not a width one. */
 @media (pointer: coarse) {

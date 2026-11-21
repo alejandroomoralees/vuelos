@@ -115,7 +115,7 @@ interface TabSpec {
 
 /** The control of the columns each tab stands in for, the first of its sheet */
 const COLUMN_CONTROLS: Record<TabId, string> = {
-  layers: "heatmap-btn",
+  layers: "airports-btn",
   filter: "year-select",
   stats: "stats-btn",
   wrapped: "wrapped-btn",

@@ -60,13 +60,9 @@ export interface ToggleSpec {
 export const TOGGLES = [
   {
     key: "heatmapVisible",
-    initial: true,
+    // Retain URL slot 0 for compatibility, but no longer restore heatmaps.
+    initial: false,
     url: { slot: 0 },
-    action: "toggleHeatmap",
-    button: "heatmap-btn",
-    icon: "heatmap",
-    label: "Heatmap",
-    sheet: { group: "layers", id: "heatmap" },
   },
   {
     key: "airportsVisible",
@@ -126,7 +122,7 @@ export const TOGGLES = [
   {
     // Whether the flights are lifted to their altitude (calculations/lift.ts)
     key: "threeDVisible",
-    initial: false,
+    initial: true,
     url: { param: "d" },
     action: "toggleThreeD",
     button: "three-d-btn",
@@ -138,7 +134,7 @@ export const TOGGLES = [
   {
     // Whether the ground is drawn from satellite imagery (ui/satellite.ts)
     key: "satelliteVisible",
-    initial: false,
+    initial: true,
     url: { param: "s" },
     action: "toggleSatellite",
     button: "satellite-btn",
@@ -146,6 +142,16 @@ export const TOGGLES = [
     label: "Satellite",
     pressed: true,
     sheet: { group: "layers", id: "satellite" },
+  },
+  {
+    key: "lightModeVisible",
+    initial: false,
+    url: { param: "light" },
+    action: "toggleLightMode",
+    button: "light-mode-btn",
+    icon: "lightMode",
+    label: "Light mode",
+    sheet: { group: "layers", id: "light-mode" },
   },
   {
     key: "isolateSelection",
