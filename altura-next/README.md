@@ -8,18 +8,21 @@ Prototipo de una nueva aplicación web para visualizar vuelos a partir de archiv
 - Detección de vuelo, fecha y aeropuertos desde nombres `FlightAware_...`.
 - Resumen de distancia, altitud máxima y velocidad cuando el KML incluye marcas de tiempo.
 - Rutas coloreadas por altitud o velocidad, con perfil de elevación 3D.
+- Perfil de altitud, reproducción de la ruta y búsqueda con filtro por año.
 - Vista satélite, relieve, modo claro y centrado al norte.
 - Conversión de códigos ICAO de aeropuertos españoles conocidos a IATA.
+- Historial guardado en el almacenamiento local del navegador; los KML no se suben.
+- Acceso a [Insignia VFR](https://insigniavfr.enaire.es/) y a las [cartas VFR500 oficiales](https://aip.enaire.es/AIP/CartasInsigniaImpresas-es.html) de ENAIRE.
 
 ## Vista previa
 
-Sirve esta carpeta con cualquier servidor HTTP estático. Por ejemplo, desde la raíz del repositorio:
+Desde la raíz del repositorio, ejecuta:
 
 ```sh
-python -m http.server 8000 --directory altura-next
+node altura-next/serve.mjs
 ```
 
-Después abre `http://localhost:8000`. Se requieren conexión a Internet para descargar MapLibre, los estilos cartográficos, las imágenes satélite y los mosaicos de elevación.
+Después abre `http://127.0.0.1:8000`. Se requieren conexión a Internet para descargar MapLibre, los estilos cartográficos, las imágenes satélite y los mosaicos de elevación.
 
 ## Estado del reemplazo
 
